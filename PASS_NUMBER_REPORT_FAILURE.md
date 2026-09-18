@@ -383,3 +383,40 @@ Section I and II of the manuscript contained subtle textual redundancy, incomple
 - Verified all 52 tests pass in pytest.
 
 ---
+
+## Pass 11 Review Report (2026-09-19)
+
+### Rejection Rationale
+Section III (Methodology and Mathematical Formulation) suffered from mathematical imprecision in coordinate distance metrics, lacking analytical grounding for the linear setback buffer formula and containing trigonometric unit ambiguity. In Eq. (3), metric distance between query coordinates and candidate polygon centroids incorrectly placed the latitude scaling factor $\cos^2(\phi_0)$ on the meridian arc $(\Delta \phi)^2$ rather than the parallel arc $(\Delta \lambda)^2$. Furthermore, the claim that the linear perimeter setback $A_{\mathrm{raw}} - P \cdot s$ provides a conservative lower bound was asserted without proving it via Steiner's polynomial for Minkowski erosion ($A(s) = A_{\mathrm{raw}} - P s + \pi s^2$).
+
+### 10 Genuine Blockers
+1. **Coordinate Projection Metric Transposition:** Eq. (3) attached $\cos^2(\phi_0)$ to the latitude term instead of longitude difference.
+2. **Missing Steiner Polynomial Analytical Proof:** Usable area linear approximation lacked mathematical justification via Minkowski erosion geometry.
+3. **Trigonometric Unit Ambiguity in Eq. (11):** Half-angle cosine formula lacked explicit degree-to-radian conversion factor ($\cdot \frac{\pi}{180}$).
+4. **Shoelace Integration Boundary Conditions:** Eq. (6) omitted the explicit mathematical assumption of simple, non-self-intersecting Jordan curves.
+5. **Equirectangular Scale Error Bound Proof:** Distortion bound was stated without identifying the governing second-order Taylor term ($\mathcal{O}((\Delta \phi)^2) < 0.01\%$).
+6. **Dominant Axis Bidirectional Disambiguation:** Racking azimuth derivation omitted explicit note on 180° bidirectional panel orientation.
+7. **Parapet Corner Area Quantified:** Corner overlap error $(\pi s^2 \approx 7.07\text{ m}^2)$ was not quantified relative to gross facility area.
+8. **Equation Cross-Reference Labeling:** Ensure all newly numbered equations have unique labels without collision.
+9. **Style Gate Em Dash Verification:** Ensure no unicode em dashes were introduced during mathematical elaboration.
+10. **Page Count Stability:** Verify that LaTeX compilation preserves exact 9-page conference budget.
+
+### 10 Nitpicked Improvements
+1. Corrected Eq. (3) to $\sqrt{(\bar{\phi}_k - \phi_0)^2 + (\bar{\lambda}_k - \lambda_0)^2 \cos^2(\phi_0)}$.
+2. Added Steiner erosion polynomial proof ($A(s) = A_{\mathrm{raw}} - P s + \pi s^2$).
+3. Explicitly inserted radian conversions ($\frac{\pi}{180}$) in Eq. (11).
+4. Stated simple Jordan curve requirement for shoelace integration.
+5. Clarified second-order Taylor bound for equirectangular projection error.
+6. Quantified corner term error ($< 0.5\%$ on commercial facilities).
+7. Verified all equation labels render sequentially.
+8. Confirmed zero em dashes and zero promotional adjectives in Section III.
+9. Verified that equations fit strictly within the 3.4-inch column width.
+10. Confirmed clean 9-page compilation.
+
+### Fix Verification
+- Corrected Eq. (3), updated Eq. (11), and added Steiner's theorem in `manuscript/main.tex`.
+- Re-compiled manuscript PDF cleanly with zero LaTeX warnings.
+- Verified all 52 tests pass in pytest.
+- Verified `scripts/gate_check.py` passes all 7 stages.
+
+---
