@@ -171,3 +171,18 @@ def test_calculate_carbon_offset():
     assert calculate_carbon_offset(0.0) == 0.0
 
 
+def test_sizing_edge_cases():
+    assert calculate_dc_capacity(0.0, 0.20) == 0.0
+    assert calculate_dc_capacity(100.0, -0.05) == 0.0
+    assert recommend_inverter_capacity(0.0, 1.2) == 0.0
+    assert recommend_inverter_capacity(100.0, 0.0) == 100.0
+    assert calculate_module_count(0.0, 400.0) == 0
+    assert calculate_module_count(10.0, 0.0) == 0
+
+
+def test_financial_edge_cases():
+    assert estimate_simple_payback(0.0, 0.38) == float('inf')
+    assert calculate_lcoe(0.0, 10.0) == float('inf')
+    assert calculate_discounted_payback(annual_kwh=10.0, tariff_per_kwh=0.01, dc_capacity_kw=1000.0) == float('inf')
+
+

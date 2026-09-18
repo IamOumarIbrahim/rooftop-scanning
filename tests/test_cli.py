@@ -49,3 +49,24 @@ def test_run_scan_out_of_bounds_coordinates():
 
     with pytest.raises(ValueError, match="Longitude -190.0 is out of valid range"):
         run_scan(address="Test", lat=25.0, lon=-190.0)
+
+
+def test_run_scan_with_emirate_profile(tmp_path):
+    out_dir = str(tmp_path / "reports_ad")
+    res = run_scan(
+        address="Abu Dhabi Solar Facility",
+        fixture_path=W5_FIXTURE,
+        out_dir=out_dir,
+        emirate="abu_dhabi",
+        fmt="pdf"
+    )
+    assert os.path.exists(res)
+
+
+def test_cli_main_demo(monkeypatch, tmp_path):
+    import sys
+    from solarscan.cli import main
+    monkeypatch.setattr(sys, "argv", ["solarscan", "demo", "--format", "html"])
+    monkeypatch.setattr("solarscan.cli.run_scan", lambda *args, **kwargs: "mock_demo_report.html")
+    main()
+

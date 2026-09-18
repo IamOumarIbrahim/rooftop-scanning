@@ -68,3 +68,21 @@ def test_end_to_end_w5_scan(tmp_path):
         fmt="both"
     )
     assert os.path.exists(out_report)
+
+
+def test_capture_fixture(monkeypatch, tmp_path):
+    from solarscan import fixtures
+    mock_result = {
+        "building_id": 123456,
+        "polygon_coords": [(25.0, 55.0), (25.01, 55.0), (25.01, 55.01), (25.0, 55.0)],
+        "obstruction_area": 12.5
+    }
+    monkeypatch.setattr("solarscan.osm.query_osm_building", lambda lat, lon: mock_result)
+    out_json = str(tmp_path / "mock_fixture.json")
+    saved = fixtures.capture_fixture(25.0, 55.0, out_json)
+    assert saved["building_id"] == 123456
+    assert os.path.exists(out_json)
+    loaded = fixtures.load_fixture(out_json)
+    assert loaded["building_id"] == 123456
+    assert loaded["obstruction_area"] == 12.5
+
