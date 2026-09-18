@@ -645,6 +645,43 @@ Static analysis and library architecture suffered from missing public export bou
 
 ---
 
+## Pass 18 Review Report (2026-09-19)
+
+### Rejection Rationale
+Root documentation in `README.md` and contributor contract in `AGENT.md` contained internal contradictions and outdated repository metadata. Specifically, `README.md` listed an obsolete 5.36% MAPE error figure in Gate 2 description (conflicting with the 4.54% empirical metric in Section 1 and Table II), omitted 5 of the 8 test modules and the newly added `solarscan/config.py` from the directory structure layout, retained an anonymous placeholder in the conference citation block despite published author names, and lacked an architectural pipeline ASCII schematic to assist external developers and peer reviewers. Furthermore, `AGENT.md` retained an outdated test counter (52 tests instead of the current 63 tests).
+
+### 10 Genuine Blockers
+1. **Conflicting MAPE Metric in README Gate 2:** Described Gate 2 as 5.36% MAPE, contradicting the validated 4.54% benchmark.
+2. **Incomplete Repository Layout in README:** Omitted `solarscan/config.py` and 5 test files from the directory tree.
+3. **Outdated Test Counter in AGENT.md:** Documented 52 tests instead of 63 passing tests.
+4. **Anonymous Citation Placeholder:** README BibTeX listed "Anonymous Authors" instead of official authors (Oumar Mamoun Ibrahim and Mohamad Khairi bin Ishak).
+5. **Missing Architectural Pipeline Diagram:** Developers lacked a clear visual data-flow diagram from address input to PDF report.
+6. **Missing Regional CLI Documentation:** Usage documentation omitted how to invoke `--emirate` for multi-jurisdiction scans.
+7. **Style Gate Em Dash Verification:** Ensure 0 em dashes across README and AGENT.md updates.
+8. **Promotional Vocabulary Check:** Zero promotional adjectives across all documentation.
+9. **Case Study Regeneration Invariance:** UoS W5 metrics remain 100% identical.
+10. **Page Count Stability:** Manuscript PDF strictly maintained at 9 pages (781.9 KB).
+
+### 10 Nitpicked Improvements
+1. Corrected Gate 2 metric to 4.54% MAPE, -4.54% MBE, and $R^2 = 1.000$ in `README.md`.
+2. Expanded `README.md` and `AGENT.md` directory trees to list all 8 test modules and `config.py`.
+3. Added ASCII dataflow pipeline schematic in Section 1 of `README.md`.
+4. Added regional scan CLI example (`--emirate abu_dhabi`) in `README.md`.
+5. Updated BibTeX citation block with verified author credentials.
+6. Updated `AGENT.md` status to reflect 63/63 passing tests and 82% statement coverage.
+7. Added `pytest-cov` to dependency specifications.
+8. Verified 0 em dashes across all markdown files.
+9. Verified 0 promotional adjectives across all markdown files.
+10. Verified all 7 quality gates pass cleanly.
+
+### Fix Verification
+- Synchronized `README.md` metrics (4.54% MAPE, -4.54% MBE), added pipeline diagram, and expanded test and module file trees.
+- Updated `AGENT.md` to 63/63 tests passing with 82% statement coverage.
+- Verified `scripts/gate_check.py` passes all 7 stages cleanly.
+
+---
+
+
 
 
 

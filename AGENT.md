@@ -77,6 +77,7 @@ rooftop-scanning/
 ├── solarscan/                     # Core Python framework
 │   ├── __init__.py
 │   ├── cli.py
+│   ├── config.py
 │   ├── geometry.py
 │   ├── osm.py
 │   ├── sizing.py
@@ -100,7 +101,7 @@ rooftop-scanning/
 │   ├── main.pdf                   # Compiled 9-page conference manuscript
 │   ├── figures/                   # Vector PDF and PNG publication figures
 │   └── tables/                    # Modular LaTeX table inputs
-├── tests/                         # Automated unit and integration tests (21 tests)
+├── tests/                         # Automated unit and integration tests (63 tests)
 ├── scripts/                       # Verification and automation scripts
 │   ├── gate_check.py              # Automated 7-stage reproducibility quality gate
 │   ├── reproduce_paper.bat        # Windows one-click paper reproduction script
@@ -132,12 +133,12 @@ scripts\reproduce_paper.bat
 - **Status:** Complete. All quality gates passed. Manuscript fully compiled (9 pages) in official IEEE template.
 - **Last updated:** 2026-09-19
 - **Automated Verification Summary:**
-  - Unit & Integration Tests: 52/52 passed.
+  - Unit & Integration Tests: 63/63 passed (82% overall statement coverage).
   - Multi-Building Validation: 24 buildings across 5 Emirates, MAPE = 4.54%, MBE = -4.54%, $R^2 = 1.000$, RMSE = 1,432.7 m².
   - Case Study (University of Sharjah W5): Area 1,610.02 m², 272.38 kW DC, 260.33 MWh/yr, 2.75-year payback.
   - Figures & Tables: All 7 figures and 5 tables generated from code (including single-column side-by-side satellite vs OSM trace comparison).
   - Style Quality Gate: 0 em dashes, 0 promotional adjectives, all acronyms defined on first use.
-  - PDF Compilation: Compiled cleanly with `pdflatex` + `bibtex` (9 pages, 718.8 KB).
+  - PDF Compilation: Compiled cleanly with `pdflatex` + `bibtex` (9 pages, 781.9 KB).
 
 
 ---

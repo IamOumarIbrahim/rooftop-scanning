@@ -23,6 +23,13 @@ This work delivers a self-contained, open-source Python framework that extracts 
 - **Case Study (University of Sharjah W5):** Footprint area of 1,610.02 m² (94.72% agreement with ground truth), 272.38 kW DC array capacity, 260.33 MWh/yr annual generation, and a 2.75-year simple payback period.
 - **Scale-Dependent Setback Sensitivity:** Analytical proof and numerical demonstration that perimeter setback impact is governed strictly by the perimeter-to-area ($P/A$) ratio.
 
+### Pipeline Architecture
+```
+ [Address / Coordinates] ──> [Overpass API] ──> [Cartesian Projection] ──> [Shoelace Area & Setback]
+                                                                                     │
+ [PDF / HTML Report] <── [Payback, NPV, LCOE] <── [Orientation Derate & Yield] <─────┘
+```
+
 ---
 
 ## 2. Repository Layout
@@ -37,12 +44,13 @@ rooftop-scanning/
 ├── solarscan.yaml                 # Default regional sizing parameters
 │
 ├── solarscan/                     # Core Python framework
-│   ├── __init__.py                # Package initialization
+│   ├── __init__.py                # Package initialization and public API
 │   ├── cli.py                     # Command-line interface
+│   ├── config.py                  # Regional UAE utility profiles and configuration loader
 │   ├── geometry.py                # Metric projection, shoelace area, perimeter, azimuth
 │   ├── osm.py                     # Overpass API client and URL geocoding
 │   ├── sizing.py                  # DC array and AC inverter capacity sizing
-│   ├── yield_estimate.py          # Empirical orientation derate, annual yield, payback
+│   ├── yield_estimate.py          # Empirical orientation derate, annual yield, payback, NPV
 │   ├── fixtures.py                # Deterministic offline fixture loading
 │   └── report.py                  # PDF and HTML report generation
 │
@@ -66,10 +74,15 @@ rooftop-scanning/
 │   ├── figures/                   # Vector PDF and PNG publication figures
 │   └── tables/                    # Modular LaTeX table inputs
 │
-├── tests/                         # Automated unit and integration tests
-│   ├── test_geometry.py           # Tests shoelace, perimeter, setbacks, projection
-│   ├── test_sizing_and_yield.py   # Tests sizing, derate, yield, payback, LCOE
-│   └── test_osm_and_fixtures.py   # Tests coordinate parsing and W5 end-to-end scan
+├── tests/                         # Automated unit and integration tests (63 tests)
+│   ├── test_cli.py                # CLI commands, argument validation, and demo mode
+│   ├── test_config.py             # Regional UAE utility profiles and YAML loaders
+│   ├── test_geometry.py           # Shoelace area, perimeter, setbacks, projection
+│   ├── test_osm_and_fixtures.py   # Coordinate parsing and fixture loading
+│   ├── test_report.py             # PDF and HTML report rendering
+│   ├── test_sensitivity.py        # Sensitivity sweeps and Monte Carlo uncertainty
+│   ├── test_sizing_and_yield.py   # Array sizing, derate, yield, NPV, and payback
+│   └── test_validation.py         # Statistical error metric calculations
 │
 ├── scripts/                       # Verification and automation scripts
 │   ├── gate_check.py              # Automated 7-stage reproducibility quality gate
@@ -94,7 +107,7 @@ cd rooftop-scanning
 pip install -e .
 ```
 
-Dependencies: `requests`, `pyyaml`, `matplotlib`, `reportlab`, `shapely`, `pytest`.
+Dependencies: `requests`, `pyyaml`, `matplotlib`, `reportlab`, `shapely`, `pytest`, `pytest-cov`.
 
 ---
 
@@ -111,11 +124,11 @@ python scripts/gate_check.py
 
 The gate-check script validates:
 1. Full test suite execution (`pytest tests/`).
-2. Empirical validation dataset consistency ($N=24$, MAPE = 5.36%, MBE = -5.36%, $R^2 = 1.000$).
+2. Empirical validation dataset consistency ($N=24$, MAPE = 4.54%, MBE = -4.54%, $R^2 = 1.000$).
 3. University of Sharjah W5 case study exact mathematical regeneration.
 4. Publication figure and table regeneration.
 5. Style and tone compliance (zero promotional language, zero em dashes).
-6. Complete IEEE manuscript PDF compilation via `pdflatex` and `bibtex` (6–10 pages).
+6. Complete IEEE manuscript PDF compilation via `pdflatex` and `bibtex` (6 to 10 pages).
 7. Framework CLI PDF and HTML report generation.
 
 ### One-Click Reproduction Script
@@ -138,8 +151,8 @@ The gate-check script validates:
 # Scan by address
 solarscan scan "Computer Science Department W5 Sharjah"
 
-# Scan by exact GPS coordinates
-solarscan scan "Campus Facility" --lat 25.28933 --lon 55.47831
+# Scan by exact GPS coordinates with Abu Dhabi regional profile
+solarscan scan "Campus Facility" --lat 24.4539 --lon 54.3773 --emirate abu_dhabi
 
 # Generate both PDF and HTML reports
 solarscan scan "Computer Science Department W5 Sharjah" --format both
@@ -164,7 +177,7 @@ If you use this framework or benchmark dataset in academic research, cite as:
 ```bibtex
 @inproceedings{solarscan2026,
   title = {Automated Rooftop Solar Pre-Feasibility Assessment from OpenStreetMap Building Footprints},
-  author = {Anonymous Authors},
+  author = {Oumar Mamoun Ibrahim and Mohamad Khairi bin Ishak},
   booktitle = {Proceedings of the International Conference on Sustainable Energy \& Power Systems (SEPS-2026)},
   year = {2026},
   address = {Sharjah, United Arab Emirates}
