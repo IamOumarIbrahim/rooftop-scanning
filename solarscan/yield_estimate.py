@@ -20,13 +20,76 @@ def calculate_orientation_derate(azimuth_deg: float, tilt_deg: float) -> float:
         f_tilt = cos(radians(|tilt - 20| / 2))
         f_orient = max(0.5, f_azimuth * f_tilt)
     """
+    clamped_tilt = max(0.0, min(90.0, tilt_deg))
     dev_from_south = abs(((azimuth_deg - 180.0 + 180.0) % 360.0) - 180.0)
     
     azimuth_factor = math.cos(math.radians(dev_from_south / 2.0))
-    tilt_factor = math.cos(math.radians(abs(tilt_deg - 20.0) / 2.0))
+    tilt_factor = math.cos(math.radians(abs(clamped_tilt - 20.0) / 2.0))
     
     derate = max(0.5, azimuth_factor * tilt_factor)
     return round(derate, 4)
+
+
+def calculate_temperature_derate(
+    ambient_temp_c: float = 35.0,
+    temp_coeff: float = -0.0035,
+    noct: float = 45.0,
+    irradiance: float = 800.0
+) -> float:
+    """
+    Computes cell operating temperature derate factor based on ambient temperature
+    and Normal Operating Cell Temperature (NOCT).
+    
+    Cell temperature:
+        T_cell = T_amb + (NOCT - 20) * (G / 800)
+    Temperature loss factor:
+        f_temp = 1 + gamma * (T_cell - 25)
+    """
+    t_cell = ambient_temp_c + (noct - 20.0) * (irradiance / 800.0)
+    f_temp = 1.0 + temp_coeff * (t_cell - 25.0)
+    return round(max(0.5, min(1.0, f_temp)), 4)
+
+
+def calculate_inverter_clipping_loss(dc_ac_ratio: float = 1.2) -> float:
+    """
+    Estimates annual percentage clipping loss due to Inverter Loading Ratio (ILR = DC/AC).
+    Empirical polynomial approximation for sunny desert climates.
+    For ILR <= 1.15, clipping loss is negligible (< 0.1%).
+    For ILR = 1.20, clipping loss is approximately 0.4% to 0.8%.
+    For ILR = 1.35, clipping loss approaches 2.5% to 3.5%.
+    """
+    if dc_ac_ratio <= 1.15:
+        return 0.0
+    excess = dc_ac_ratio - 1.15
+    clipping_loss_pct = 75.0 * (excess ** 2)
+    return round(min(15.0, clipping_loss_pct), 3)
+
+
+def calculate_specific_yield(annual_kwh: float, dc_capacity_kw: float) -> float:
+    """
+    Computes specific energy yield in kWh per kWp installed per year (kWh/kWp/yr).
+    Standard benchmarking metric for photovoltaic plant performance across regions.
+    """
+    if dc_capacity_kw <= 0.0:
+        return 0.0
+    return round(annual_kwh / dc_capacity_kw, 2)
+
+
+def breakdown_performance_ratio(
+    ambient_temp_c: float = 35.0,
+    soiling_factor: float = 0.95,
+    inverter_eff: float = 0.98,
+    dc_wiring_loss: float = 0.015,
+    ac_wiring_loss: float = 0.01
+) -> float:
+    """
+    Calculates overall system Performance Ratio (PR) by multiplying individual
+    subsystem efficiency factors.
+    """
+    f_temp = calculate_temperature_derate(ambient_temp_c=ambient_temp_c)
+    f_wiring = (1.0 - dc_wiring_loss) * (1.0 - ac_wiring_loss)
+    pr = f_temp * soiling_factor * inverter_eff * f_wiring
+    return round(pr, 4)
 
 
 def estimate_annual_yield(

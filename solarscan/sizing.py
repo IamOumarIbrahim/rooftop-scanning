@@ -49,3 +49,13 @@ def calculate_module_count(dc_capacity_kw: float, module_rating_watts: float = 4
         return 0
     total_watts = dc_capacity_kw * 1000.0
     return int(math.floor(total_watts / module_rating_watts))
+
+
+def is_viable_system(dc_capacity_kw: float, min_kw: float = 3.0) -> bool:
+    """
+    Determines whether a sized rooftop PV system satisfies minimum technical
+    and economic viability thresholds for commercial/residential grid interconnect.
+    Systems below min_kw (default 3.0 kW) typically do not justify balance-of-system,
+    permitting, and interconnection fixed costs.
+    """
+    return dc_capacity_kw >= min_kw

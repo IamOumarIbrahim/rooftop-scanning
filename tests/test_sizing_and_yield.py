@@ -7,13 +7,18 @@ import math
 from solarscan.sizing import (
     calculate_dc_capacity,
     recommend_inverter_capacity,
-    calculate_module_count
+    calculate_module_count,
+    is_viable_system
 )
 from solarscan.yield_estimate import (
     calculate_orientation_derate,
     estimate_annual_yield,
     estimate_simple_payback,
-    calculate_lcoe
+    calculate_lcoe,
+    calculate_temperature_derate,
+    calculate_inverter_clipping_loss,
+    calculate_specific_yield,
+    breakdown_performance_ratio
 )
 
 
@@ -97,3 +102,36 @@ def test_lcoe_calculation():
         lifetime_years=25
     )
     assert 0.03 <= lcoe <= 0.10
+
+
+def test_is_viable_system():
+    assert is_viable_system(10.0, min_kw=3.0) is True
+    assert is_viable_system(1.5, min_kw=3.0) is False
+
+
+def test_calculate_temperature_derate():
+    derate_mild = calculate_temperature_derate(ambient_temp_c=25.0)
+    derate_hot = calculate_temperature_derate(ambient_temp_c=45.0)
+    assert 0.85 <= derate_mild <= 1.0
+    assert 0.70 <= derate_hot < derate_mild
+
+
+def test_calculate_inverter_clipping_loss():
+    loss_low = calculate_inverter_clipping_loss(dc_ac_ratio=1.10)
+    loss_med = calculate_inverter_clipping_loss(dc_ac_ratio=1.20)
+    loss_high = calculate_inverter_clipping_loss(dc_ac_ratio=1.35)
+    assert loss_low == 0.0
+    assert 0.0 < loss_med < 1.0
+    assert 1.0 < loss_high < 5.0
+
+
+def test_calculate_specific_yield():
+    spec = calculate_specific_yield(annual_kwh=16000.0, dc_capacity_kw=10.0)
+    assert math.isclose(spec, 1600.0, rel_tol=1e-5)
+    assert calculate_specific_yield(1000.0, 0.0) == 0.0
+
+
+def test_breakdown_performance_ratio():
+    pr = breakdown_performance_ratio(ambient_temp_c=35.0)
+    assert 0.75 <= pr <= 0.90
+

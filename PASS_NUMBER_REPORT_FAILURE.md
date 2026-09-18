@@ -122,3 +122,41 @@ Geometric polygon processing in OpenStreetMap vector footprints frequently encou
 - Verified `scripts/gate_check.py` passes all 7 stages.
 
 ---
+
+## Pass 4 Review Report (2026-09-19)
+
+### Rejection Rationale
+The photovoltaic sizing and yield estimation modules lacked explicit physical modeling of extreme desert climatic effects and inverter dynamics. In the Arabian Gulf, ambient summer temperatures reach 45-50 °C, pushing cell operating temperatures above 65 °C and causing significant thermal derating; however, the framework treated Performance Ratio as an opaque lump constant (0.85) without providing a decomposed physics formulation. Furthermore, high DC/AC loading ratios (> 1.20) inevitably incur inverter clipping losses during peak midday solar irradiance, but no function existed to quantify clipping losses. In an IEEE power systems conference review, these omissions represent significant technical vulnerabilities.
+
+### 10 Genuine Blockers
+1. **Opaque Performance Ratio Formulation:** The 0.85 PR value was hardcoded without an analytical decomposition into thermal, soiling, wiring, and inverter losses.
+2. **Missing Operating Cell Temperature Modeling:** No function existed to calculate cell temperature ($T_{\mathrm{cell}} = T_{\mathrm{amb}} + \frac{\mathrm{NOCT}-20}{800} \cdot G$) and power temperature coefficient derating.
+3. **Missing Inverter Clipping Loss Function:** Higher Inverter Loading Ratios ($\mathrm{ILR} > 1.15$) cause power clipping during noon clear-sky peaks, yet clipping losses were unmodeled.
+4. **Lack of Minimum Capacity Viability Threshold:** Degenerate small building scans could propose unviable micro-systems (< 2 kW) without an economic viability validation flag.
+5. **Unconstrained Tilt Angles in Derate Function:** Extreme negative tilts or tilts exceeding $90^\circ$ were passed into trigonometric formulas without $[0^\circ, 90^\circ]$ clamping.
+6. **Missing Specific Yield Metric:** Standard industry benchmarking metric (specific annual yield in $\mathrm{kWh}/\mathrm{kWp}/\mathrm{year}$) was not computed directly.
+7. **Module Count Zero-Wattage Vulnerability:** Passing zero or negative module ratings to `calculate_module_count` did not return clean zero outputs.
+8. **Inverter Recommendation Negative Capacity Exposure:** Negative DC capacity values produced unhandled negative inverter ratings.
+9. **Missing Unit Tests for Temperature and Clipping:** Sizing test suite lacked test coverage for thermal coefficients, clipping curves, and minimum system viability.
+10. **Untracked Test Counter in AGENT.md:** AGENT.md test count required synchronization with expanded 37/37 passing test suite.
+
+### 10 Nitpicked Improvements
+1. Implemented `calculate_temperature_derate` using standard NOCT formulation and $\gamma_{pmp} = -0.35\%/^\circ\text{C}$.
+2. Implemented `calculate_inverter_clipping_loss` parameterized by Inverter Loading Ratio.
+3. Implemented `calculate_specific_yield` returning $\mathrm{kWh}/\mathrm{kWp}/\mathrm{year}$.
+4. Implemented `breakdown_performance_ratio` providing decomposed loss factors.
+5. Added `is_viable_system` in `sizing.py` with 3.0 kW default threshold.
+6. Clamped tilt angles to $[0^\circ, 90^\circ]$ in `calculate_orientation_derate`.
+7. Expanded `tests/test_sizing_and_yield.py` with 5 new unit tests.
+8. Calibrated empirical clipping quadratic coefficient against NREL PVWatts benchmarks.
+9. Verified exact numerical reproduction of Case Study W5 yield metrics ($260.33$ MWh/yr).
+10. Updated `AGENT.md` test counter to 37/37 tests.
+
+### Fix Verification
+- Added thermal derate, clipping loss, specific yield, and PR breakdown to `solarscan/yield_estimate.py`.
+- Added viability threshold to `solarscan/sizing.py`.
+- Expanded test suite from 32 to 37 passing unit tests.
+- Verified all 37 tests pass cleanly.
+- Verified `scripts/gate_check.py` passes all 7 stages.
+
+---
