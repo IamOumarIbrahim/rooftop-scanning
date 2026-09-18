@@ -12,6 +12,7 @@
 \usepackage{siunitx}
 \usepackage{url}
 \usepackage{microtype}
+\usepackage{balance}
 
 \graphicspath{{figures/}}
 
@@ -355,10 +356,14 @@ Regions lacking commercial solar APIs (UAE, GCC, Global South). & Electrical ser
 To maintain research rigor, we explicitly acknowledge the limitations of the proposed framework:
 \begin{enumerate}
     \item \textbf{Crowdsourced Completeness and Freshness:} The framework depends on OpenStreetMap data availability. While urban centers in the UAE exhibit high building footprint density, newly constructed desert developments or rural settlements may lack mapped polygons, triggering synthetic fallback bounding.
-    \item \textbf{Flat-Roof Assumption:} The sizing equations assume flat horizontal roofs where modules are mounted on ballasted racking. While flat roofs represent the dominant architectural typology for commercial, institutional, and residential buildings in the Arabian Gulf, this assumption does not capture complex pitched residential roofs common in Northern Europe and North America.
-    \item \textbf{Micro-Obstruction and Shading Omission:} The Overpass building footprint does not extract small rooftop mechanical units (air handling units, satellite dishes, piping) or cast-shadow interactions from adjacent high-rise skyscrapers.
-    \item \textbf{Screening Scope:} The framework is designed strictly for preliminary decision support. It does not replace structural engineering assessments, electrical single-line diagrams, or municipal permitting.
+    \item \textbf{Flat-Roof Assumption:} Sizing models assume horizontal rooftops where modules are mounted on ballasted racking. While flat roofs represent the dominant architectural typology for commercial, institutional, and industrial facilities across the Arabian Gulf, this assumption does not capture complex pitched residential roofs with multiple slope facets.
+    \item \textbf{Micro-Obstruction and Shading Omission:} Raw vector footprints do not capture rooftop mechanical units (air handling units, chiller pipes, satellite fixtures) or cast-shadow profiles from neighboring high-rise structures.
+    \item \textbf{Dynamic Soiling and Thermal Cycling:} Elevated ambient desert temperatures pushing cell temperatures above 65$^\circ$C and dust accumulation affect operational yields. While our empirical derates and Monte Carlo uncertainty sweeps bound bulk performance losses, operational plant design requires site-specific soiling wash cycles and dynamic thermal time-series.
+    \item \textbf{Grid Interconnection Constraints:} Pre-feasibility estimates quantify physical rooftop hosting potential, but do not evaluate distribution transformer capacity headroom, reverse power flow limits, or utility grid interconnect requirements.
+    \item \textbf{Screening Scope:} The framework is designed strictly for preliminary decision support. It does not replace detailed structural load calculations, electrical single-line engineering, or municipal permitting.
 \end{enumerate}
+
+\balance
 
 \section{Conclusion}
 
