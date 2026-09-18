@@ -5,6 +5,10 @@ and self-contained HTML reports.
 """
 
 import os
+import os
+import html
+import uuid
+import logging
 from typing import Dict, Any, List, Tuple
 
 import matplotlib
@@ -53,84 +57,96 @@ def generate_pdf_report(report_data: Dict[str, Any], output_pdf_path: str) -> No
     Generates a formal PDF pre-feasibility report using ReportLab.
     """
     if not REPORTLAB_AVAILABLE:
+        logging.warning("ReportLab is not installed; skipping PDF report generation.")
         return
         
     os.makedirs(os.path.dirname(os.path.abspath(output_pdf_path)), exist_ok=True)
-    diagram_png = output_pdf_path.replace('.pdf', '_temp_diag.png')
-    generate_footprint_diagram(report_data.get("meter_coords", []), diagram_png)
+    temp_id = uuid.uuid4().hex[:8]
+    diagram_png = output_pdf_path.replace('.pdf', f'_temp_diag_{temp_id}.png')
     
-    doc = SimpleDocTemplate(output_pdf_path, pagesize=letter)
-    styles = getSampleStyleSheet()
-    
-    title_style = ParagraphStyle(
-        'DocTitle',
-        parent=styles['Heading1'],
-        fontSize=18,
-        leading=22,
-        textColor=colors.HexColor('#0f172a'),
-        alignment=1,
-        spaceAfter=12
-    )
-    
-    h2_style = ParagraphStyle(
-        'SectionHeader',
-        parent=styles['Heading2'],
-        fontSize=13,
-        leading=16,
-        textColor=colors.HexColor('#1e3a8a'),
-        spaceBefore=10,
-        spaceAfter=6
-    )
-
-    story = []
-    story.append(Paragraph("SolarScan Feasibility Assessment", title_style))
-    story.append(Spacer(1, 8))
-    
-    address = report_data.get("address", "N/A")
-    story.append(Paragraph(f"<b>Location:</b> {address}", styles['Normal']))
-    story.append(Spacer(1, 8))
-    
-    if os.path.exists(diagram_png):
-        story.append(Image(diagram_png, width=380, height=220))
-        story.append(Spacer(1, 10))
+    try:
+        generate_footprint_diagram(report_data.get("meter_coords", []), diagram_png)
         
-    story.append(Paragraph("System Sizing & Yield Summary", h2_style))
-    
-    table_data = [
-        ["Parameter", "Estimated Value"],
-        ["Gross Footprint Area", f"{report_data.get('raw_area', 0.0):,.2f} m²"],
-        ["Net Usable Area (after setback)", f"{report_data.get('usable_area', 0.0):,.2f} m²"],
-        ["Perimeter Setback Distance", f"{report_data.get('setback_m', 1.5):.2f} m"],
-        ["Module Efficiency", f"{report_data.get('module_efficiency', 0.20)*100:.1f}%"],
-        ["Rated DC Capacity", f"{report_data.get('dc_capacity_kw', 0.0):,.2f} kW DC"],
-        ["Recommended Inverter Band", f"{report_data.get('ac_capacity_kw', 0.0):,.2f} kW AC"],
-        ["Dominant Roof Azimuth", f"{report_data.get('azimuth_deg', 180.0):.1f}°"],
-        ["Array Tilt Angle", f"{report_data.get('tilt_deg', 15.0):.1f}°"],
-        ["Estimated Annual Energy Yield", f"{report_data.get('annual_kwh', 0.0):,.2f} kWh/yr"],
-        ["Assumed Electricity Tariff", f"{report_data.get('rate_aed', 0.38):.2f} AED/kWh"],
-        ["Simple Payback Period", f"{report_data.get('payback_years', 0.0):.2f} years"],
-    ]
-    
-    t = Table(table_data, colWidths=[240, 200])
-    t.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#0f172a')),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0,0), (-1,0), 6),
-        ('BACKGROUND', (0,1), (-1,-1), colors.HexColor('#f8fafc')),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cbd5e1')),
-        ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
-        ('FONTSIZE', (0,0), (-1,-1), 9),
-    ]))
-    
-    story.append(t)
-    doc.build(story)
-    
-    if os.path.exists(diagram_png):
-        try:
-            os.remove(diagram_png)
-        except Exception:
-            pass
+        doc = SimpleDocTemplate(output_pdf_path, pagesize=letter)
+        styles = getSampleStyleSheet()
+        
+        title_style = ParagraphStyle(
+            'DocTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            leading=22,
+            textColor=colors.HexColor('#0f172a'),
+            alignment=1,
+            spaceAfter=12
+        )
+        
+        h2_style = ParagraphStyle(
+            'SectionHeader',
+            parent=styles['Heading2'],
+            fontSize=13,
+            leading=16,
+            textColor=colors.HexColor('#1e3a8a'),
+            spaceBefore=10,
+            spaceAfter=6
+        )
+
+        story = []
+        story.append(Paragraph("SolarScan Feasibility Assessment", title_style))
+        story.append(Spacer(1, 8))
+        
+        address = report_data.get("address", "N/A")
+        escaped_addr = html.escape(str(address))
+        story.append(Paragraph(f"<b>Location:</b> {escaped_addr}", styles['Normal']))
+        story.append(Spacer(1, 8))
+        
+        if os.path.exists(diagram_png):
+            story.append(Image(diagram_png, width=380, height=220))
+            story.append(Spacer(1, 10))
+            
+        story.append(Paragraph("System Sizing & Yield Summary", h2_style))
+        
+        annual_kwh = report_data.get('annual_kwh', 0.0)
+        dc_cap = report_data.get('dc_capacity_kw', 0.0)
+        spec_yield = (annual_kwh / dc_cap) if dc_cap > 0 else 0.0
+        co2_tonnes = (annual_kwh * 0.42) / 1000.0
+
+        table_data = [
+            ["Parameter", "Estimated Value"],
+            ["Gross Footprint Area", f"{report_data.get('raw_area', 0.0):,.2f} m²"],
+            ["Net Usable Area (after setback)", f"{report_data.get('usable_area', 0.0):,.2f} m²"],
+            ["Perimeter Setback Distance", f"{report_data.get('setback_m', 1.5):.2f} m"],
+            ["Module Efficiency", f"{report_data.get('module_efficiency', 0.20)*100:.1f}%"],
+            ["Rated DC Capacity", f"{dc_cap:,.2f} kW DC"],
+            ["Recommended Inverter Band", f"{report_data.get('ac_capacity_kw', 0.0):,.2f} kW AC"],
+            ["Dominant Roof Azimuth", f"{report_data.get('azimuth_deg', 180.0):.1f}°"],
+            ["Array Tilt Angle", f"{report_data.get('tilt_deg', 15.0):.1f}°"],
+            ["Estimated Annual Energy Yield", f"{annual_kwh:,.2f} kWh/yr"],
+            ["Specific Annual Yield", f"{spec_yield:,.1f} kWh/kWp/yr"],
+            ["Avoided Carbon Emissions", f"{co2_tonnes:,.2f} tCO₂e/yr"],
+            ["Assumed Electricity Tariff", f"{report_data.get('rate_aed', 0.38):.2f} AED/kWh"],
+            ["Simple Payback Period", f"{report_data.get('payback_years', 0.0):.2f} years"],
+        ]
+        
+        t = Table(table_data, colWidths=[240, 200])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#0f172a')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0,0), (-1,0), 6),
+            ('BACKGROUND', (0,1), (-1,-1), colors.HexColor('#f8fafc')),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cbd5e1')),
+            ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
+            ('FONTSIZE', (0,0), (-1,-1), 9),
+        ]))
+        
+        story.append(t)
+        doc.build(story)
+    finally:
+        if os.path.exists(diagram_png):
+            try:
+                os.remove(diagram_png)
+            except Exception:
+                pass
 
 
 def generate_svg_footprint(meter_coords: List[Tuple[float, float]]) -> str:
@@ -176,6 +192,7 @@ def generate_html_report(report_data: Dict[str, Any], output_html_path: str) -> 
     os.makedirs(os.path.dirname(os.path.abspath(output_html_path)), exist_ok=True)
     svg_code = generate_svg_footprint(report_data.get("meter_coords", []))
     address = report_data.get("address", "N/A")
+    escaped_address = html.escape(str(address))
     raw_area = report_data.get("raw_area", 0.0)
     usable_area = report_data.get("usable_area", 0.0)
     setback_m = report_data.get("setback_m", 1.5)
@@ -187,29 +204,35 @@ def generate_html_report(report_data: Dict[str, Any], output_html_path: str) -> 
     annual_kwh = report_data.get("annual_kwh", 0.0)
     rate_aed = report_data.get("rate_aed", 0.38)
     payback_years = report_data.get("payback_years", 0.0)
+    spec_yield = (annual_kwh / dc_capacity_kw) if dc_capacity_kw > 0 else 0.0
+    co2_tonnes = (annual_kwh * 0.42) / 1000.0
 
-    html = f"""<!DOCTYPE html>
+    html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solar Feasibility Report - {address}</title>
+    <title>Solar Feasibility Report - {escaped_address}</title>
     <style>
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; padding: 2rem 1rem; display: flex; justify-content: center; }}
         .container {{ max-width: 800px; width: 100%; background: #ffffff; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); padding: 2rem; border: 1px solid #e2e8f0; }}
-        h1 {{ font-size: 1.4rem; text-align: center; margin-bottom: 1.2rem; }}
+        h1 {{ font-size: 1.4rem; text-align: center; margin-bottom: 1.2rem; color: #0f172a; }}
         .meta {{ background: #f1f5f9; padding: 0.75rem 1rem; border-radius: 6px; font-weight: 500; margin-bottom: 1.5rem; }}
         .diagram {{ background: #fafafa; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; text-align: center; }}
         table {{ width: 100%; border-collapse: collapse; margin-top: 0.5rem; }}
         th, td {{ padding: 0.7rem 1rem; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; }}
         th {{ background: #0f172a; color: #ffffff; }}
         tr:nth-child(even) {{ background: #f8fafc; }}
+        @media print {{
+            body {{ background: #ffffff; padding: 0; }}
+            .container {{ box-shadow: none; border: none; padding: 0; }}
+        }}
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Rooftop Solar Feasibility Assessment</h1>
-        <div class="meta">Location: {address}</div>
+        <div class="meta">Location: {escaped_address}</div>
         <div class="diagram">{svg_code}</div>
         <table>
             <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
@@ -223,6 +246,8 @@ def generate_html_report(report_data: Dict[str, Any], output_html_path: str) -> 
                 <tr><td>Roof Azimuth</td><td>{azimuth_deg:.1f}°</td></tr>
                 <tr><td>Panel Tilt</td><td>{tilt_deg:.1f}°</td></tr>
                 <tr><td>Annual Energy Yield</td><td>{annual_kwh:,.2f} kWh/yr</td></tr>
+                <tr><td>Specific Annual Yield</td><td>{spec_yield:,.1f} kWh/kWp/yr</td></tr>
+                <tr><td>Avoided Carbon Emissions</td><td>{co2_tonnes:,.2f} tCO₂e/yr</td></tr>
                 <tr><td>Electricity Tariff</td><td>{rate_aed:.2f} AED/kWh</td></tr>
                 <tr><td>Simple Payback Period</td><td>{payback_years:.2f} years</td></tr>
             </tbody>
@@ -231,4 +256,4 @@ def generate_html_report(report_data: Dict[str, Any], output_html_path: str) -> 
 </body>
 </html>"""
     with open(output_html_path, "w", encoding="utf-8") as f:
-        f.write(html)
+        f.write(html_content)

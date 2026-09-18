@@ -197,3 +197,40 @@ Techno-economic modeling in pre-feasibility analysis was previously restricted t
 - Verified `scripts/gate_check.py` passes all 7 stages.
 
 ---
+
+## Pass 6 Review Report (2026-09-19)
+
+### Rejection Rationale
+The reporting subsystem (`solarscan/report.py`) presented critical gaps in software testing, security sanitization, and lifecycle resource cleanup. The reporting module was completely untested in CI (zero tests in `tests/`), leaving PDF and HTML generation unverified. Address strings were directly interpolated into raw HTML without escaping, exposing generated feasibility reports to Cross-Site Scripting (XSS) when handling untrusted user input. Furthermore, temporary footprint raster images created during PDF compilation could be orphaned on exceptions, and neither PDF nor HTML reports included specific yield or greenhouse gas abatement metrics.
+
+### 10 Genuine Blockers
+1. **Untested Report Module:** `tests/test_report.py` did not exist, leaving ReportLab PDF generation and SVG construction untested.
+2. **HTML Injection / XSS Exposure:** Raw user address strings were interpolated into HTML without `html.escape()`.
+3. **Orphaned Temporary Files:** In `generate_pdf_report`, failure during `doc.build()` left temporary PNG files orphaned on the filesystem.
+4. **Missing Environmental Metrics in Reports:** Avoided greenhouse gas emissions ($\mathrm{tCO}_2/\mathrm{year}$) were omitted from PDF and HTML executive summaries.
+5. **Missing Specific Yield Metric in Reports:** Annual specific energy production ($\mathrm{kWh}/\mathrm{kWp}/\mathrm{year}$) was not displayed in generated report tables.
+6. **Concurrent Generation Collision Risk:** Hardcoded `_temp_diag.png` filename risked collisions during parallel worker scans.
+7. **Silent ReportLab Failure:** Absence of ReportLab dependency failed silently without informative logging.
+8. **Missing Print Media Stylesheet:** HTML reports lacked `@media print` rules, causing broken formatting when printed.
+9. **SVG Degenerate Coordinate Vulnerability:** Zero-width or zero-height polygons lacked non-zero SVG viewbox bounds clamping.
+10. **Desynchronized Documentation Verification:** AGENT.md test count required updating to 44/44 tests.
+
+### 10 Nitpicked Improvements
+1. Applied `html.escape()` to all address strings in HTML and PDF templates.
+2. Implemented `try...finally` block to guarantee temporary file removal.
+3. Used `uuid.uuid4().hex[:8]` suffix for temporary diagram filenames.
+4. Added Avoided Carbon Emissions row ($0.42\text{ kg CO}_2/\text{kWh}$ baseline) to PDF table.
+5. Added Avoided Carbon Emissions row to HTML report table.
+6. Added Specific Annual Yield ($\mathrm{kWh}/\mathrm{kWp}/\mathrm{yr}$) row to PDF and HTML tables.
+7. Added `@media print` styling to HTML report for clean browser-to-PDF printing.
+8. Added informative logging warning when ReportLab is not available.
+9. Created `tests/test_report.py` with 4 comprehensive test functions.
+10. Synchronized `AGENT.md` test counter to 44/44 passing tests.
+
+### Fix Verification
+- Enhanced `solarscan/report.py` with sanitization, metrics, cleanup, and print CSS.
+- Created `tests/test_report.py` testing PDF, HTML, SVG, and XSS escaping.
+- Verified 44/44 tests pass in pytest.
+- Verified `scripts/gate_check.py` passes all 7 stages.
+
+---
