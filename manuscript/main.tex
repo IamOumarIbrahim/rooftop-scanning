@@ -59,9 +59,8 @@ Crowdsourced geospatial data from OpenStreetMap (OSM) provide an alternative fou
 
 This paper addresses this barrier by making the following specific research contributions:
 \begin{enumerate}
-    \item \textbf{End-to-End Open Framework:} We implement and document a self-contained Python framework (SolarScan) that executes the complete pre-feasibility workflow: coordinate geocoding, OSM Overpass polygon retrieval, local metric projection, shoelace area computation, perimeter setback buffering, dominant roof azimuth extraction, empirical irradiance derating, system sizing, and financial payback modeling. The framework operates without commercial GIS licenses, GPU hardware, or paid API keys.
-    \item \textbf{Empirical Multi-Building Validation in a Coverage-Gap Region:} We assemble an empirical benchmark of 24 buildings across five UAE Emirates, evaluating automated OSM extraction against independent high-resolution satellite measurements across three key solar rooftop typologies (academic, commercial, and industrial/logistics).
- We quantify the accuracy of automated OSM footprint extraction against independent high-resolution satellite reference measurements, reporting Mean Absolute Percentage Error (MAPE), Mean Bias Error (MBE), Root Mean Square Error (RMSE), and correlation coefficients.
+    \item \textbf{End-to-End Open Framework:} We implement and document a self-contained Python framework (SolarScan) that executes the complete pre-feasibility workflow: coordinate geocoding, OSM Overpass polygon retrieval, local metric projection, shoelace area computation, perimeter setback buffering, dominant roof azimuth extraction, empirical irradiance derating, system sizing, life-cycle techno-economics, and greenhouse gas carbon offset estimation. The framework operates without commercial GIS licenses, GPU hardware, or paid API keys.
+    \item \textbf{Empirical Multi-Building Validation in a Coverage-Gap Region:} We assemble an empirical benchmark of 24 buildings across five UAE Emirates (Sharjah, Dubai, Abu Dhabi, Ajman, and Ras Al Khaimah), evaluating automated OSM extraction against independent sub-meter satellite measurements across academic, commercial, and industrial typologies. We quantify geometric fidelity using Mean Absolute Percentage Error (MAPE), Mean Bias Error (MBE), Root Mean Square Error (RMSE), and correlation coefficients.
     \item \textbf{Sensitivity and Boundary Analysis:} We perform parametric sensitivity analyses on perimeter setback distances and roof orientations, proving analytically that perimeter-based setbacks exhibit strong scale dependency governed by the building's perimeter-to-area ($P/A$) ratio. We define explicit boundaries for when crowdsourced footprint screening is reliable for first-decision feasibility and when detailed engineering design is required.
 \end{enumerate}
 
@@ -105,7 +104,7 @@ When the query contains an unstructured textual address, the system queries the 
 
 \subsection{Stage 2: OpenStreetMap Overpass Vector Retrieval}
 
-Given centroid $(\phi_0, \lambda_0)$, the framework queries the OpenStreetMap Overpass API using the Overpass QL language within a bounding search radius $r_s = 250$~m:
+Given centroid $(\phi_0, \lambda_0)$, the framework queries the OpenStreetMap Overpass API using the Overpass Query Language (QL) within a bounding search radius $r_s = 250$~m:
 \begin{equation}
 \mathcal{Q} = \left[ \mathrm{way}[\text{``building''}](\mathrm{around}: r_s, \phi_0, \lambda_0); \right]
 \end{equation}

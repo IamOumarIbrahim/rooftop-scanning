@@ -345,3 +345,41 @@ The graphical presentation in the manuscript previously suffered from minor visu
 - Verified `scripts/gate_check.py` passes all 7 stages.
 
 ---
+
+## Pass 10 Review Report (2026-09-19)
+
+### Rejection Rationale
+Section I and II of the manuscript contained subtle textual redundancy, incomplete acronym expansions, and missed opportunities for regional policy contextualization. Specifically, Contribution 2 repeated the phrase "quantify automated OSM footprint extraction against independent satellite measurements" across consecutive sentences, and Overpass QL was referenced without expanding "Query Language". Furthermore, Contribution 1 omitted life-cycle techno-economic modeling (NPV, LCOE) and carbon emissions avoidance from its enumerated scope, weakening the perceived technical breadth of the presented software artifact.
+
+### 10 Genuine Blockers
+1. **Sentence Duplication in Contribution 2:** Redundant repetitive wording in Section I contribution list.
+2. **Unexpanded Query Language Acronym:** Overpass QL was introduced in Section III without expanding QL on first mention.
+3. **Omission of Life-Cycle Scope in Contribution 1:** Contribution 1 described only simple payback, omitting newly added NPV, LCOE, and CO2 emissions abatement.
+4. **Geographic Coverage Ambiguity:** Contribution 2 omitted explicit mention of the five surveyed emirates (Sharjah, Dubai, Abu Dhabi, Ajman, Ras Al Khaimah).
+5. **BibTeX Case Preservation Risk:** Title capitalization in `manuscript/references.bib` required verification for proper bracket preservation (`{UAE}`, `{PV}`, `{DEWA}`).
+6. **Double-Blind Policy Verification:** Need to verify institutional affiliation formatting against single-blind vs double-blind conference guidelines.
+7. **Style Gate Em Dash Audit:** Verification that no unicode em dashes (—) or LaTeX em dashes (---) were inadvertently added.
+8. **Promotional Vocabulary Audit:** Strict check for forbidden words ("novel", "state-of-the-art", "seamless", "revolutionary").
+9. **Citation Integrity Check:** Confirmation that all cited entries in Section I and II resolve cleanly without BibTeX warnings.
+10. **Page Count Stability:** Confirmation that Section I edits did not alter manuscript page budget (must remain exactly 9 pages).
+
+### 10 Nitpicked Improvements
+1. Consolidated Contribution 2 into concise, publication-grade prose.
+2. Expanded Contribution 1 to explicitly include life-cycle techno-economics and carbon offsets.
+3. Defined Overpass Query Language (QL) in Section III-B.
+4. Clarified the 5-Emirate geographical scope in Section I.
+5. Confirmed zero em dashes across the entire LaTeX manuscript.
+6. Confirmed zero promotional adjectives in `manuscript/main.tex`.
+7. Verified all mathematical equations use proper LaTeX symbol formatting.
+8. Ensured IEEE bibliography style compiles with zero missing reference keys.
+9. Checked author block emails and department affiliations for formatting consistency.
+10. Re-compiled PDF cleanly and verified page count remains exactly 9 pages.
+
+### Fix Verification
+- Refined Section I contributions in `manuscript/main.tex`.
+- Defined Overpass Query Language (QL) on first use.
+- Audited references and confirmed clean BibTeX resolution.
+- Verified style gate and IEEE compilation pass with zero errors.
+- Verified all 52 tests pass in pytest.
+
+---
