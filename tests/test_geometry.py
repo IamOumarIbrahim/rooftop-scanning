@@ -10,7 +10,11 @@ from solarscan.geometry import (
     calculate_usable_area,
     calculate_dominant_azimuth,
     latlon_to_meters,
-    calculate_usable_area_buffered
+    calculate_usable_area_buffered,
+    sanitize_polygon,
+    calculate_polygon_centroid,
+    calculate_bounding_box,
+    calculate_aspect_ratio
 )
 
 
@@ -82,3 +86,42 @@ def test_buffered_usable_area():
     buffered_usable = calculate_usable_area_buffered(vertices, setback_m=1.0)
     # Exact buffered rectangle of (20-2) x (10-2) = 18 x 8 = 144 m2
     assert 130.0 <= buffered_usable <= 150.0
+
+
+def test_sanitize_polygon_closing_duplicate():
+    coords = [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0), (0.0, 0.0)]
+    cleaned = sanitize_polygon(coords)
+    assert len(cleaned) == 4
+    assert cleaned == [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)]
+
+
+def test_sanitize_polygon_consecutive_duplicates():
+    coords = [(0.0, 0.0), (0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)]
+    cleaned = sanitize_polygon(coords)
+    assert len(cleaned) == 4
+
+
+def test_sanitize_polygon_non_finite():
+    with pytest.raises(ValueError, match="Non-finite coordinate"):
+        sanitize_polygon([(0.0, 0.0), (float('nan'), 1.0), (1.0, 1.0)])
+
+
+def test_polygon_centroid():
+    vertices = [(0.0, 0.0), (20.0, 0.0), (20.0, 10.0), (0.0, 10.0)]
+    cx, cy = calculate_polygon_centroid(vertices)
+    assert math.isclose(cx, 10.0, abs_tol=1e-3)
+    assert math.isclose(cy, 5.0, abs_tol=1e-3)
+
+
+def test_bounding_box_and_aspect_ratio():
+    vertices = [(0.0, 0.0), (40.0, 0.0), (40.0, 20.0), (0.0, 20.0)]
+    bbox = calculate_bounding_box(vertices)
+    assert bbox == (0.0, 0.0, 40.0, 20.0)
+    aspect = calculate_aspect_ratio(vertices)
+    assert math.isclose(aspect, 2.0, abs_tol=1e-3)
+
+
+def test_usable_area_negative_setback():
+    usable = calculate_usable_area(100.0, 40.0, -1.5, -5.0)
+    assert math.isclose(usable, 100.0, abs_tol=1e-5)
+

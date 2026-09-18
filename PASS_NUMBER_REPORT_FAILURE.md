@@ -84,3 +84,41 @@ The framework CLI interface and core API modules exhibit insufficient defensive 
 - Verified 26/26 tests pass cleanly.
 
 ---
+
+## Pass 3 Review Report (2026-09-19)
+
+### Rejection Rationale
+Geometric polygon processing in OpenStreetMap vector footprints frequently encounters real-world topological irregularities: duplicate closing nodes (`coords[-1] == coords[0]`), consecutive zero-distance vertices, non-finite float anomalies, and complex polygon boundaries. The codebase previously lacked explicit polygon sanitization, skewing centroid weighting, creating zero-length edge artifacts in dominant azimuth calculations, and failing to provide true planar centroid calculations (shoelace moments) or bounding-box aspect ratio analytics. In an academic conference setting, failure to rigorously handle topological edge cases undermines the computational claims made in Section III.
+
+### 10 Genuine Blockers
+1. **Redundant Duplicate Closing Nodes:** OSM vector loops repeating the origin vertex at the end were uncleaned, creating redundant zero-length segments and weighting errors in metric projection.
+2. **Consecutive Duplicate Vertices:** Micro-digitization jitter with duplicate consecutive points caused zero-length vectors in edge-finding algorithms.
+3. **Missing Non-Finite Coordinate Guards:** NaN or Inf coordinates passed into trigonometric equirectangular equations without proactive exception throwing.
+4. **Imprecise Polygon Centroid:** Centroids were approximated via vertex arithmetic means rather than second-moment planar shoelace centroids.
+5. **Missing Bounding Box and Aspect Ratio Calculations:** No methods existed to compute oriented or axis-aligned bounding boxes to evaluate footprint elongation.
+6. **Negative Setback and Obstruction Leakage:** Negative setback distances or negative obstruction values could artificially expand usable roof area beyond raw building footprint.
+7. **Azimuth Zero-Length Vector Flaw:** Longest-edge azimuth calculation evaluated zero-length edges when consecutive identical vertices existed.
+8. **Missing Geometry Edge Case Tests:** Test suite lacked tests for trailing duplicate closing vertices, consecutive duplicate points, and NaN/Inf coordinates.
+9. **Buffered Usable Area Negative Parameter Exposure:** `calculate_usable_area_buffered` accepted unconstrained negative parameters when buffering.
+10. **Untracked Test Suite Expansion in AGENT.md:** AGENT.md test count required updating to 32/32 tests to maintain truth-in-documentation.
+
+### 10 Nitpicked Improvements
+1. Implemented `sanitize_polygon` function with 1e-7 metric/angular duplicate detection threshold.
+2. Added `calculate_polygon_centroid` implementing standard second-moment shoelace formulation.
+3. Added `calculate_bounding_box` returning standard `(min_x, min_y, max_x, max_y)` tuple.
+4. Added `calculate_aspect_ratio` computing major-to-minor dimension ratios.
+5. Clamped negative setback and negative obstruction parameters to 0.0 in both analytical and buffered area functions.
+6. Ensured azimuth calculation skips edges with length < 1e-6 meters.
+7. Added 6 comprehensive test cases in `tests/test_geometry.py`.
+8. Documented mathematical shoelace moment formulas in `geometry.py`.
+9. Enforced clean finite-number validation raising ValueError for non-finite inputs.
+10. Updated `AGENT.md` verification metrics to 32/32 tests passed.
+
+### Fix Verification
+- Added `sanitize_polygon`, `calculate_polygon_centroid`, `calculate_bounding_box`, and `calculate_aspect_ratio` to `solarscan/geometry.py`.
+- Clamped setback parameters in `calculate_usable_area` and `calculate_usable_area_buffered`.
+- Added 6 new unit tests to `tests/test_geometry.py`.
+- Verified all 32 tests pass cleanly with pytest.
+- Verified `scripts/gate_check.py` passes all 7 stages.
+
+---
