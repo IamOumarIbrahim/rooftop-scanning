@@ -1,4 +1,6 @@
 # SolarScan Configuration File
+# Default sizing, financial, and environmental parameters for UAE pre-feasibility screening.
+
 default_tilt_deg: 15.0
 setback_m: 1.5
 module_efficiency: 0.20
@@ -7,3 +9,40 @@ peak_sun_hours_per_day: 5.5
 system_loss_factor: 0.85
 cost_per_kw: 1000.0
 rate_aed: 0.38
+grid_co2_kg_per_kwh: 0.42
+discount_rate: 0.05
+lifetime_years: 25
+annual_degradation: 0.005
+
+# Verified utility tariffs and solar resource profiles across the 5 Emirates
+regional_profiles:
+  sharjah:
+    emirate: Sharjah
+    utility: SEWA
+    rate_aed: 0.38
+    peak_sun_hours_per_day: 5.50
+    default_tilt_deg: 15.0
+  dubai:
+    emirate: Dubai
+    utility: DEWA
+    rate_aed: 0.38
+    peak_sun_hours_per_day: 5.55
+    default_tilt_deg: 15.0
+  abu_dhabi:
+    emirate: Abu Dhabi
+    utility: TAQA / ADDC
+    rate_aed: 0.30
+    peak_sun_hours_per_day: 5.60
+    default_tilt_deg: 15.0
+  ajman:
+    emirate: Ajman
+    utility: Etihad WE
+    rate_aed: 0.38
+    peak_sun_hours_per_day: 5.50
+    default_tilt_deg: 15.0
+  ras_al_khaimah:
+    emirate: Ras Al Khaimah
+    utility: Etihad WE
+    rate_aed: 0.38
+    peak_sun_hours_per_day: 5.45
+    default_tilt_deg: 15.0

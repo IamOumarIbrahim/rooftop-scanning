@@ -19,29 +19,7 @@ from solarscan.geometry import (
 from solarscan.sizing import calculate_dc_capacity, recommend_inverter_capacity
 from solarscan.yield_estimate import estimate_annual_yield, estimate_simple_payback
 from solarscan.report import generate_pdf_report, generate_html_report
-
-
-def load_config(config_path: str = "solarscan.yaml") -> Dict[str, Any]:
-    """Loads default sizing and economic configuration."""
-    defaults = {
-        "default_tilt_deg": 15.0,
-        "setback_m": 1.5,
-        "module_efficiency": 0.20,
-        "dc_ac_ratio": 1.2,
-        "peak_sun_hours_per_day": 5.5,
-        "system_loss_factor": 0.85,
-        "cost_per_kw": 1000.0,
-        "rate_aed": 0.38
-    }
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                user_cfg = yaml.safe_load(f)
-                if isinstance(user_cfg, dict):
-                    defaults.update(user_cfg)
-        except Exception as e:
-            print(f"Warning: Failed to load config {config_path}: {e}")
-    return defaults
+from solarscan.config import load_config, get_emirate_profile
 
 
 def run_scan(
@@ -55,10 +33,11 @@ def run_scan(
     out_dir: str = "reports",
     config_path: str = "solarscan.yaml",
     fixture_path: Optional[str] = None,
-    fmt: str = "pdf"
+    fmt: str = "pdf",
+    emirate: Optional[str] = None
 ) -> str:
     """Executes end-to-end solar pre-feasibility screening."""
-    cfg = load_config(config_path)
+    cfg = load_config(config_path, emirate=emirate)
     
     tilt_deg = tilt if tilt is not None else cfg.get("default_tilt_deg", 15.0)
     setback_m = setback if setback is not None else cfg.get("setback_m", 1.5)
@@ -177,6 +156,7 @@ def main():
     scan_parser.add_argument("--config", type=str, default="solarscan.yaml", help="Config YAML file")
     scan_parser.add_argument("--fixture", type=str, default=None, help="Path to offline JSON fixture")
     scan_parser.add_argument("--format", choices=["pdf", "html", "both"], default="pdf", help="Report format")
+    scan_parser.add_argument("--emirate", type=str, default=None, choices=["sharjah", "dubai", "abu_dhabi", "ajman", "ras_al_khaimah"], help="Regional UAE utility profile")
 
     demo_parser = subparsers.add_parser("demo", help="Run offline reference case study")
     demo_parser.add_argument("--format", choices=["pdf", "html", "both"], default="pdf", help="Report format")
@@ -201,7 +181,8 @@ def main():
             out_dir=args.out,
             config_path=args.config,
             fixture_path=args.fixture,
-            fmt=args.format
+            fmt=args.format,
+            emirate=args.emirate
         )
     elif args.command == "demo":
         fixture = "data/fixtures/uos_w5.json"
