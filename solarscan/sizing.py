@@ -17,6 +17,8 @@ def calculate_dc_capacity(usable_area: float, module_efficiency: float = 0.20) -
              
     Returns capacity in kW DC.
     """
+    if usable_area <= 0.0 or module_efficiency <= 0.0:
+        return 0.0
     capacity_watts = usable_area * module_efficiency * 1000.0
     return round(capacity_watts / 1000.0, 3)
 
@@ -31,8 +33,10 @@ def recommend_inverter_capacity(dc_capacity_kw: float, dc_ac_ratio: float = 1.2)
         
     Returns capacity in kW AC.
     """
+    if dc_capacity_kw <= 0.0:
+        return 0.0
     if dc_ac_ratio <= 0:
-        return dc_capacity_kw
+        return round(dc_capacity_kw, 2)
     ac_capacity_kw = dc_capacity_kw / dc_ac_ratio
     return round(ac_capacity_kw, 2)
 
@@ -41,7 +45,7 @@ def calculate_module_count(dc_capacity_kw: float, module_rating_watts: float = 4
     """
     Calculates the integer count of photovoltaic modules required to meet DC capacity.
     """
-    if module_rating_watts <= 0:
+    if dc_capacity_kw <= 0.0 or module_rating_watts <= 0.0:
         return 0
     total_watts = dc_capacity_kw * 1000.0
     return int(math.floor(total_watts / module_rating_watts))

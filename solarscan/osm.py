@@ -63,7 +63,9 @@ def parse_google_maps_url(text: str) -> Optional[Tuple[float, float]]:
     # Priority 5: Raw "lat, lon"
     match_raw = re.search(r'^\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*$', text)
     if match_raw:
-        return float(match_raw.group(1)), float(match_raw.group(2))
+        lat, lon = float(match_raw.group(1)), float(match_raw.group(2))
+        if -90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0:
+            return lat, lon
 
     return None
 
@@ -100,6 +102,13 @@ def query_osm_building(lat: float, lon: float, search_radius_m: int = 250) -> Di
     Failovers across mirrors. If no building polygon is found or network fails,
     returns a synthetic square polygon for testing/offline continuity.
     """
+    if search_radius_m <= 0:
+        raise ValueError(f"Search radius must be positive, got {search_radius_m}")
+    if not (-90.0 <= lat <= 90.0):
+        raise ValueError(f"Latitude {lat} is out of bounds [-90, 90]")
+    if not (-180.0 <= lon <= 180.0):
+        raise ValueError(f"Longitude {lon} is out of bounds [-180, 180]")
+
     query = f"""
     [out:json][timeout:10];
     (

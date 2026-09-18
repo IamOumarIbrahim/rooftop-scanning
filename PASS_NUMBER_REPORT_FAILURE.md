@@ -46,3 +46,41 @@ The paper and codebase fail basic repository hygiene and reproducibility verific
 - Staged and verified all files ready for git tracking.
 
 ---
+
+## Pass 2 Review Report (2026-09-19)
+
+### Rejection Rationale
+The framework CLI interface and core API modules exhibit insufficient defensive validation and lack automated CLI integration tests. Submitting unhandled inputs (such as mismatched latitude/longitude pairs, coordinates outside valid geographic ranges [-90, 90] / [-180, 180], empty or whitespace address queries, or non-existent output directories) causes raw Python tracebacks and unhandled exceptions rather than clean exit states. Furthermore, the core sizing and yield calculation functions lack non-negative guards on physical quantities (module efficiency, inverter loading ratios, and tariff rates). In an automated reproducible research pipeline, this vulnerability undermines reliability and portability.
+
+### 10 Genuine Blockers
+1. **Unprotected Output Directory Creation:** `run_scan` in `solarscan/cli.py` did not invoke `os.makedirs(out_dir, exist_ok=True)`, causing unhandled `FileNotFoundError` when executing scans with novel report target paths.
+2. **Missing Coordinate Pair Validation:** Providing `--lat` without `--lon` (or vice versa) produced undefined behavior or silent fallbacks.
+3. **Unchecked Coordinate Domain Boundaries:** Latitude values outside [-90, 90] and longitude values outside [-180, 180] were passed unchecked to geometric modules.
+4. **Empty Query Handling Failure:** Blank or whitespace-only address inputs caused ambiguous file generation names and unhandled geocoder crashes.
+5. **Missing Unit Tests for CLI:** `tests/test_cli.py` did not exist, leaving the primary user entrypoint (`solarscan.cli`) completely untested in CI.
+6. **Zero/Negative Efficiency Guard Missing:** `calculate_dc_capacity` permitted negative or zero module efficiencies, generating invalid negative array ratings.
+7. **Inverter Capacity Division by Zero:** `recommend_inverter_capacity` lacked zero-capacity guards for edge-case degenerate footprints.
+8. **Negative Search Radius Unchecked:** Overpass query functions allowed negative or zero search radii without raising explicit ValueError.
+9. **Unvalidated Google Maps URL Extraction:** Regex parser in `parse_google_maps_url` lacked coordinate range boundary checks.
+10. **Hardcoded Test Count in Gate Check:** `scripts/gate_check.py` hardcoded a check for 21/21 tests, preventing test suite expansion.
+
+### 10 Nitpicked Improvements
+1. Dynamic test reporting in `scripts/gate_check.py` to seamlessly reflect test suite growth.
+2. Updated `AGENT.md` test metrics from 21/21 to 26/26.
+3. Added structured error messaging with informative value bounds.
+4. Ensured `test_cli.py` tests temp directories using pytest fixtures.
+5. Added tests for invalid latitude/longitude ranges and mismatched coordinates.
+6. Ensured non-negative module count calculations in `calculate_module_count`.
+7. Hardened raw coordinate string extraction in `parse_google_maps_url`.
+8. Added type annotations and docstring clarifications in `solarscan/sizing.py`.
+9. Added clean fallback handling if report target directory has nested paths.
+10. Retained backward compatibility of `run_scan` output return values for gate checks.
+
+### Fix Verification
+- Implemented coordinate and directory validation in `solarscan/cli.py`.
+- Hardened boundary checks in `solarscan/osm.py` and `solarscan/sizing.py`.
+- Created comprehensive `tests/test_cli.py` expanding test suite from 21 to 26 passing tests.
+- Updated `scripts/gate_check.py` to dynamically output pytest results.
+- Verified 26/26 tests pass cleanly.
+
+---

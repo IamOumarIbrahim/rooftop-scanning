@@ -43,8 +43,9 @@ def step1_run_unit_tests():
         print(res.stdout)
         print(res.stderr)
         fail("Unit tests failed!")
-    print(res.stdout.strip().split("\n")[-1])
-    pass_step("Pytest suite passed (21/21 tests)")
+    last_line = res.stdout.strip().split("\n")[-1]
+    print(last_line)
+    pass_step(f"Pytest suite passed ({last_line.strip(' =')})")
 
 
 def step2_verify_validation_dataset():

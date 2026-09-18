@@ -69,6 +69,20 @@ def run_scan(
     tariff = rate_aed if rate_aed is not None else cfg.get("rate_aed", 0.38)
     cost_per_kw = cfg.get("cost_per_kw", 1000.0)
 
+    if not address or not address.strip():
+        raise ValueError("Address or location query string cannot be empty.")
+
+    if (lat is not None and lon is None) or (lon is not None and lat is None):
+        raise ValueError("Both latitude and longitude must be provided together.")
+
+    if lat is not None and not (-90.0 <= lat <= 90.0):
+        raise ValueError(f"Latitude {lat} is out of valid range [-90, 90].")
+
+    if lon is not None and not (-180.0 <= lon <= 180.0):
+        raise ValueError(f"Longitude {lon} is out of valid range [-180, 180].")
+
+    os.makedirs(out_dir, exist_ok=True)
+
     if fixture_path and os.path.exists(fixture_path):
         osm_data = load_fixture(fixture_path)
         lat = osm_data["query_lat"]
