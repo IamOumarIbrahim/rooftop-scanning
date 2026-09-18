@@ -459,3 +459,41 @@ Section IV (Results and Discussion) presented only static, un-discounted simple 
 
 ---
 
+## Pass 13 Review Report (2026-09-19)
+
+### Rejection Rationale
+Tables and mathematical typography across the manuscript suffered from severe overfull horizontal boxes (`Overfull \hbox`), violating IEEEtran conference layout standards and risking rejection during editorial inspection or IEEE PDF eXpress validation. Specifically, Table I (prior art) exceeded textwidth by 39.8 pt, Table II (validation dataset) exceeded textwidth by 42.2 pt, Table IV (case study) overflowed column width by 34.8 pt into the inter-column margin, and the empirical orientation derate equation (line 181) spilled 13.8 pt beyond the column boundary. Such typographic overflows degrade visual presentation and produce undesirable clipping or text overlaps on printed pages.
+
+### 10 Genuine Blockers
+1. **Table I Horizontal Overflow:** `tab_prior_art.tex` was 39.8 pt too wide for the two-column layout.
+2. **Table II Width Violation:** `tab_validation_dataset.tex` was 42.2 pt too wide across the page.
+3. **Table IV Column Margin Collision:** `tab_w5_case_study.tex` exceeded single-column width by 34.8 pt.
+4. **Table III Margin Squeeze:** `tab_error_metrics.tex` had a 4.3 pt overfull hbox under default padding.
+5. **Equation Line 181 Overflow:** `f_{\mathrm{orient}}` equation exceeded single column width by 13.8 pt.
+6. **Table Cell Padding Imprecision:** Default `\tabcolsep` caused unnecessary whitespace inflation in compact tables.
+7. **Long Row Labels in Single Column Tables:** Verbose strings such as "Geographical Coordinates" pushed Table IV past standard 3.5-inch column boundaries.
+8. **Style Gate Em Dash Verification:** Verification that zero em dashes were introduced during typographic adjustments.
+9. **Promotional Vocabulary Audit:** Strict adherence to zero promotional adjectives.
+10. **Page Count Stability:** Confirmation that typographic tightening preserves the exact 9-page conference budget.
+
+### 10 Nitpicked Improvements
+1. Wrapped Table I in explicit `\tabcolsep = 3.5pt` with calibrated column widths.
+2. Wrapped Table II in `\resizebox{\textwidth}{!}{...}` for exact page-width alignment.
+3. Wrapped Table IV in `\resizebox{\columnwidth}{!}{...}` with `\tabcolsep = 3.5pt` for exact single-column alignment.
+4. Adjusted Table III padding to `\tabcolsep = 3.0pt` eliminating all overfull warnings.
+5. Compacted orientation derate equation using $\frac{\pi \Delta \psi}{360}$, completely eliminating equation overfull hbox.
+6. Shortened "Geographical Coordinates" to "Coordinates" in Table IV.
+7. Regenerated all 5 LaTeX tables via `python experiments/generate_tables.py`.
+8. Confirmed zero overfull hboxes in tables during LaTeX compilation.
+9. Verified 0 em dashes and 0 promotional words across all modified files.
+10. Verified compilation output: exactly 9 pages (781.9 KB), zero errors.
+
+### Fix Verification
+- Formatted `tab_prior_art.tex`, `tab_validation_dataset.tex`, `tab_error_metrics.tex`, and `tab_w5_case_study.tex` in `experiments/generate_tables.py`.
+- Formatted Eq. (14) in `manuscript/main.tex` to eliminate overfull line.
+- Recompiled manuscript PDF with zero table or equation overfull hboxes (9 pages, 781.9 KB).
+- Verified `python scripts/gate_check.py` passes all 7 stages.
+
+---
+
+

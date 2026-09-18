@@ -177,7 +177,7 @@ The estimated module count $N_{\mathrm{mod}}$ for standard 400~Wp panels is $N_{
 In the Arabian Gulf, the optimal annual fixed tilt angle $\beta$ matches the local latitude ($\beta \approx 20^\circ$ to $25^\circ$) with true South orientation ($\psi = 180^\circ$) \cite{radhi2010}. Deviation from optimal orientation reduces incident plane-of-array (POA) irradiance. We apply an empirical orientation derating factor $f_{\mathrm{orient}} \in [0.5, 1.0]$:
 \begin{align}
 \Delta \psi &= \left| ((\psi - 180 + 180) \bmod 360) - 180 \right| \\
-f_{\mathrm{orient}} &= \max\left(0.5, \cos\left(\frac{\Delta \psi}{2} \cdot \frac{\pi}{180}\right) \cdot \cos\left(\frac{|\beta - 20^\circ|}{2} \cdot \frac{\pi}{180}\right)\right)
+f_{\mathrm{orient}} &= \max \left( 0.5, \, \cos\left(\frac{\pi \Delta \psi}{360}\right) \cos\left(\frac{\pi |\beta - 20^\circ|}{360}\right) \right)
 \end{align}
 
 Total annual AC electrical energy generation $E_{\mathrm{annual}}$ (in kWh/year) is modeled by:

@@ -3,6 +3,8 @@
 \caption{Empirical Validation Dataset: OSM Footprint vs. Independent High-Resolution Satellite Reference Measurements ($N=24$)}
 \label{tab:validation_dataset}
 \footnotesize
+\setlength{\tabcolsep}{4.0pt}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lllcrrrr}
 \toprule
 \textbf{ID} & \textbf{Building Facility Name} & \textbf{Emirate} & \textbf{Category} & \textbf{$A_{\mathrm{osm}}$ (m$^2$)} & \textbf{$A_{\mathrm{ref}}$ (m$^2$)} & \textbf{$|\Delta A|$ (m$^2$)} & \textbf{Error (\%)} \\
@@ -32,5 +34,6 @@ shj\_ind\_logistics13 & Sharjah Logistics Depot 13 & Sharjah & Industrial & 2,50
 shj\_ind\_wh11 & Sharjah Distribution Warehouse 11 & Sharjah & Industrial & 1,826.24 & 1,910.25 & 84.01 & -4.40\% \\
 shj\_ind\_fab10 & Sharjah Industrial Fabrication Hall & Sharjah & Industrial & 1,517.35 & 1,588.67 & 71.32 & -4.49\% \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table*}

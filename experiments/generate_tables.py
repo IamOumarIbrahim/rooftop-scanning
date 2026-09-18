@@ -20,7 +20,8 @@ def generate_table_prior_art():
 \caption{Systematic Comparison of Rooftop Photovoltaic Potential and Screening Methodologies}
 \label{tab:prior_art}
 \footnotesize
-\begin{tabular}{p{3.0cm}p{3.0cm}ccp{2.8cm}p{5.2cm}}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{p{2.9cm}p{2.6cm}ccp{2.5cm}p{5.6cm}}
 \toprule
 \textbf{Study / Platform} & \textbf{Primary Data Source} & \textbf{Open Source} & \textbf{End-to-End} & \textbf{Demonstrated Region} & \textbf{Key Limitation for First Decision} \\
 \midrule
@@ -53,6 +54,8 @@ def generate_table_validation_dataset():
     lines.append(r"\caption{Empirical Validation Dataset: OSM Footprint vs. Independent High-Resolution Satellite Reference Measurements ($N=24$)}")
     lines.append(r"\label{tab:validation_dataset}")
     lines.append(r"\footnotesize")
+    lines.append(r"\setlength{\tabcolsep}{4.0pt}")
+    lines.append(r"\resizebox{\textwidth}{!}{%")
     lines.append(r"\begin{tabular}{lllcrrrr}")
     lines.append(r"\toprule")
     lines.append(r"\textbf{ID} & \textbf{Building Facility Name} & \textbf{Emirate} & \textbf{Category} & \textbf{$A_{\mathrm{osm}}$ (m$^2$)} & \textbf{$A_{\mathrm{ref}}$ (m$^2$)} & \textbf{$|\Delta A|$ (m$^2$)} & \textbf{Error (\%)} \\")
@@ -70,7 +73,8 @@ def generate_table_validation_dataset():
         lines.append(f"{bid} & {name} & {em} & {cat} & {osm_a:,.2f} & {ref_a:,.2f} & {abs_err:,.2f} & {rel_err:+.2f}\\% \\\\")
 
     lines.append(r"\bottomrule")
-    lines.append(r"\end{tabular}")
+    lines.append(r"\end{tabular}%")
+    lines.append(r"}")
     lines.append(r"\end{table*}")
 
     with open(os.path.join(TABLES_DIR, "tab_validation_dataset.tex"), "w", encoding="utf-8") as f:
@@ -89,6 +93,7 @@ def generate_table_error_metrics():
     lines.append(r"\caption{Statistical Validation Metrics Categorized by Building Typology}")
     lines.append(r"\label{tab:error_metrics}")
     lines.append(r"\footnotesize")
+    lines.append(r"\setlength{\tabcolsep}{3.0pt}")
     lines.append(r"\begin{tabular}{lcccc}")
     lines.append(r"\toprule")
     lines.append(r"\textbf{Typology} & \textbf{Count} & \textbf{MAPE (\%)} & \textbf{MBE (\%)} & \textbf{Error Range (\%)} \\")
@@ -141,12 +146,13 @@ def generate_table_w5_case_study():
 \\caption{{Pre-Feasibility Technical and Financial Results for UoS W5}}
 \\label{{tab:w5_case_study}}
 \\footnotesize
+\\resizebox{{\\columnwidth}}{{!}}{{%
 \\begin{{tabular}}{{llr}}
 \\toprule
 \\textbf{{Parameter}} & \\textbf{{Unit}} & \\textbf{{Value}} \\\\
 \\midrule
 Building Identifier & -- & UoS W5 (CS Dept) \\\\
-Geographical Coordinates & deg & $25.28933^\\circ$ N, $55.47831^\\circ$ E \\\\
+Coordinates & deg & $25.28933^\\circ$ N, $55.47831^\\circ$ E \\\\
 OSM Way Identifier & -- & 204709053 \\\\
 Gross Footprint Area ($A_{{\\mathrm{{raw}}}}$) & m$^2$ & {raw_area:,.2f} \\\\
 Reference Area ($A_{{\\mathrm{{ref}}}}$) & m$^2$ & {ref_area:,.2f} \\\\
@@ -173,7 +179,8 @@ Turnkey CAPEX (1,000~AED/kW) & AED & {capex:,.0f} \\\\
 Annual Savings & AED/yr & {annual_savings:,.0f} \\\\
 Simple Payback Period ($T_{{\\mathrm{{pb}}}}$) & years & {payback:.2f} \\\\
 \\bottomrule
-\\end{{tabular}}
+\\end{{tabular}}%
+}}
 \\end{{table}}
 """
     with open(os.path.join(TABLES_DIR, "tab_w5_case_study.tex"), "w", encoding="utf-8") as f:
