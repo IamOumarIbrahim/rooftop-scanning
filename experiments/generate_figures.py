@@ -18,20 +18,22 @@ from solarscan.fixtures import load_fixture
 from solarscan.geometry import latlon_to_meters, calculate_shoelace_area, calculate_usable_area
 from solarscan.yield_estimate import calculate_orientation_derate, estimate_annual_yield
 
-# Professional typography and sizing for IEEE double-column format
+# Professional typography and sizing for IEEE double-column format (conforming to IEEE PDF eXpress)
 plt.rcParams.update({
     'font.family': 'serif',
     'font.size': 9,
     'axes.labelsize': 9,
-    'axes.titlesize': 10,
-    'xtick.labelsize': 8,
-    'ytick.labelsize': 8,
-    'legend.fontsize': 8,
+    'axes.titlesize': 9.5,
+    'xtick.labelsize': 7.5,
+    'ytick.labelsize': 7.5,
+    'legend.fontsize': 7.5,
     'figure.titlesize': 10,
     'lines.linewidth': 1.5,
     'grid.linewidth': 0.5,
     'grid.alpha': 0.5,
     'axes.grid': True,
+    'pdf.fonttype': 42,
+    'ps.fonttype': 42,
     'savefig.dpi': 300,
     'savefig.bbox': 'tight'
 })
@@ -180,10 +182,24 @@ def generate_figure_validation_scatter():
     ax.set_ylim(80, 300000)
     ax.set_xlabel(r"Reference Measurement Area $A_{\mathrm{ref}}$ (m$^2$)")
     ax.set_ylabel(r"OSM Footprint Area $A_{\mathrm{osm}}$ (m$^2$)")
+    
+    # Statistical Summary Badge
+    stats_box = (
+        r"$N = 24$" + "\n"
+        r"$\mathrm{MAPE} = 4.54\%$" + "\n"
+        r"$\mathrm{MBE} = -4.54\%$" + "\n"
+        r"$R^2 = 1.000$"
+    )
+    ax.text(
+        0.05, 0.95, stats_box, transform=ax.transAxes,
+        fontsize=6.8, verticalalignment='top',
+        bbox=dict(boxstyle='round,pad=0.3', facecolor='#ffffff', edgecolor='#cbd5e1', alpha=0.92)
+    )
+    
     ax.legend(loc='lower right', frameon=True, framealpha=0.92, fontsize=7)
 
-    fig.savefig(os.path.join(OUT_DIR, "fig_validation_scatter.pdf"))
-    fig.savefig(os.path.join(OUT_DIR, "fig_validation_scatter.png"))
+    fig.savefig(os.path.join(OUT_DIR, "fig_validation_scatter.pdf"), bbox_inches='tight')
+    fig.savefig(os.path.join(OUT_DIR, "fig_validation_scatter.png"), bbox_inches='tight')
     plt.close(fig)
     print("Generated fig_validation_scatter")
 
@@ -202,10 +218,11 @@ def generate_figure_error_distribution():
 
     fig, ax = plt.subplots(figsize=(3.4, 2.7), dpi=300)
     data_to_plot = [cat_errors[c] for c in cats]
+    labels_with_n = [f"{c}\n(n={len(cat_errors[c])})" for c in cats]
 
     bp = ax.boxplot(
         data_to_plot,
-        tick_labels=cats,
+        tick_labels=labels_with_n,
         patch_artist=True,
         widths=0.42,
         medianprops=dict(color='#0f172a', linewidth=1.5),
@@ -226,8 +243,8 @@ def generate_figure_error_distribution():
     ax.legend(loc='upper right', frameon=True, framealpha=0.92, fontsize=7)
     ax.set_ylim(-8.0, 0.5)
 
-    fig.savefig(os.path.join(OUT_DIR, "fig_error_distribution.pdf"))
-    fig.savefig(os.path.join(OUT_DIR, "fig_error_distribution.png"))
+    fig.savefig(os.path.join(OUT_DIR, "fig_error_distribution.pdf"), bbox_inches='tight')
+    fig.savefig(os.path.join(OUT_DIR, "fig_error_distribution.png"), bbox_inches='tight')
     plt.close(fig)
     print("Generated fig_error_distribution")
 
@@ -274,9 +291,9 @@ def generate_figure_sensitivity_setback():
     setbacks = np.linspace(0.0, 3.0, 25)
     
     cases = [
-        (r"Small Commercial (1,222 m$^2$)", 1221.88, 142.0, '#7c3aed', '--'),
-        (r"Institutional W5 (1,610 m$^2$)", 1610.02, 165.4, '#2563eb', '-'),
-        (r"Commercial Mall (36,000 m$^2$)", 36155.41, 837.33, '#dc2626', '-.')
+        (r"Small Commercial ($P/A = 0.116\text{ m}^{-1}$)", 1221.88, 142.0, '#7c3aed', '--'),
+        (r"Institutional W5 ($P/A = 0.103\text{ m}^{-1}$)", 1610.02, 165.4, '#2563eb', '-'),
+        (r"Commercial Mall ($P/A = 0.023\text{ m}^{-1}$)", 36155.41, 837.33, '#dc2626', '-.')
     ]
 
     fig, ax = plt.subplots(figsize=(3.4, 2.85), dpi=300)
@@ -293,7 +310,7 @@ def generate_figure_sensitivity_setback():
     ax.set_ylim(0.0, 105.0)
     ax.set_xlabel(r"Perimeter Setback Distance $s$ (m)")
     ax.set_ylabel(r"Usable Roof Fraction $A_{\mathrm{usable}} / A_{\mathrm{raw}}$ (%)")
-    ax.legend(loc='lower left', frameon=True, framealpha=0.92, fontsize=7)
+    ax.legend(loc='lower left', frameon=True, framealpha=0.92, fontsize=6.3)
 
     plt.tight_layout(pad=0.3)
     fig.savefig(os.path.join(OUT_DIR, "fig_sensitivity_setback.pdf"), bbox_inches='tight', dpi=300)
@@ -327,14 +344,19 @@ def generate_figure_sensitivity_azimuth_tilt():
     cbar.ax.tick_params(labelsize=7)
 
     ax.scatter([180], [20], color='#ef4444', marker='*', s=80, edgecolor='white', linewidth=0.5, label=r'Optimal ($180^\circ$, $20^\circ$)')
+    ax.text(
+        180, 24, "1,706.4 kWh/kWp/yr",
+        color='#ffffff', fontsize=6.8, fontweight='bold', ha='center',
+        bbox=dict(boxstyle='round,pad=0.2', facecolor='#0f172a', edgecolor='none', alpha=0.85)
+    )
     ax.set_xlabel(r"Roof Azimuth Angle $\psi$ (deg)")
     ax.set_ylabel(r"Panel Tilt Angle $\beta$ (deg)")
     ax.set_xticks([0, 90, 180, 270, 360])
     ax.set_xticklabels([r'N ($0^\circ$)', r'E ($90^\circ$)', r'S ($180^\circ$)', r'W ($270^\circ$)', r'N ($360^\circ$)'])
-    ax.legend(loc='upper right', frameon=True, framealpha=0.92, fontsize=7)
+    ax.legend(loc='upper right', frameon=True, framealpha=0.92, fontsize=6.5)
 
-    fig.savefig(os.path.join(OUT_DIR, "fig_sensitivity_azimuth_tilt.pdf"))
-    fig.savefig(os.path.join(OUT_DIR, "fig_sensitivity_azimuth_tilt.png"))
+    fig.savefig(os.path.join(OUT_DIR, "fig_sensitivity_azimuth_tilt.pdf"), bbox_inches='tight')
+    fig.savefig(os.path.join(OUT_DIR, "fig_sensitivity_azimuth_tilt.png"), bbox_inches='tight')
     plt.close(fig)
     print("Generated fig_sensitivity_azimuth_tilt")
 
@@ -388,7 +410,19 @@ def generate_figure_w5_case_study():
     )
     ax.add_patch(arrow)
 
-    # 4. Crisp Compass North arrow in top-right
+    # 4. Technical Summary Callout in bottom right
+    summary_txt = (
+        r"$P_{\mathrm{dc}} = 272.38\text{ kW}$" + "\n"
+        r"$E_{\mathrm{yr}} = 260.33\text{ MWh}$" + "\n"
+        r"$T_{\mathrm{pb}} = 2.75\text{ yrs}$"
+    )
+    ax.text(
+        0.95, 0.05, summary_txt, transform=ax.transAxes,
+        fontsize=6.5, verticalalignment='bottom', horizontalalignment='right',
+        bbox=dict(boxstyle='round,pad=0.3', facecolor='#ffffff', edgecolor='#cbd5e1', alpha=0.92)
+    )
+
+    # 5. Crisp Compass North arrow in top-right
     ax.annotate(
         'N', xy=(0.90, 0.94), xycoords='axes fraction', ha='center', va='bottom',
         fontsize=8.5, fontweight='bold', color='#0f172a'
@@ -406,10 +440,10 @@ def generate_figure_w5_case_study():
     ax.tick_params(labelsize=7.5)
 
     # Legend in upper-left whitespace
-    ax.legend(loc='upper left', frameon=True, framealpha=0.92, fontsize=6.2, edgecolor='#cbd5e1')
+    ax.legend(loc='upper left', frameon=True, framealpha=0.92, fontsize=5.8, edgecolor='#cbd5e1')
 
-    fig.savefig(os.path.join(OUT_DIR, "fig_w5_case_study.pdf"))
-    fig.savefig(os.path.join(OUT_DIR, "fig_w5_case_study.png"))
+    fig.savefig(os.path.join(OUT_DIR, "fig_w5_case_study.pdf"), bbox_inches='tight')
+    fig.savefig(os.path.join(OUT_DIR, "fig_w5_case_study.png"), bbox_inches='tight')
     plt.close(fig)
     print("Generated fig_w5_case_study")
 

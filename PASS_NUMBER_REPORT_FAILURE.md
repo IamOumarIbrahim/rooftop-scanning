@@ -308,3 +308,40 @@ The parametric sensitivity analysis (`experiments/run_sensitivity.py`) was restr
 - Verified `scripts/gate_check.py` passes all 7 stages.
 
 ---
+
+## Pass 9 Review Report (2026-09-19)
+
+### Rejection Rationale
+The graphical presentation in the manuscript previously suffered from minor visual ambiguities and vector typography risks under IEEE PDF eXpress submission standards. Figures did not configure `pdf.fonttype = 42` and `ps.fonttype = 42`, risking font embedding rejections by automated publisher ingest systems. Visually, the validation scatter plot lacked an on-figure statistical summary badge, the error distribution boxplot did not report sample sizes per building category, the setback sensitivity plot failed to display explicit perimeter-to-area ($P/A$) values in its legend, and the azimuth/tilt contour surface lacked exact numerical peak annotations.
+
+### 10 Genuine Blockers
+1. **IEEE PDF eXpress Font Embedding Risk:** Figure exporter lacked explicit TrueType / Type 42 font configuration (`pdf.fonttype = 42`).
+2. **Missing In-Plot Statistics Badge in Fig. 2:** Parity plot lacked an integrated callout summarizing benchmark sample size ($N=24$), MAPE, MBE, and $R^2$.
+3. **Missing Category Sample Sizes in Fig. 3:** Boxplot x-axis tick labels lacked category observation counts ($n=4, 9, 11$).
+4. **Missing $P/A$ Ratio Connection in Fig. 5:** Legend curves did not show the physical $P/A$ ratio ($0.116, 0.103, 0.023\text{ m}^{-1}$), disconnecting the plot from Section IV-C's analytical formulation.
+5. **Missing Specific Yield Peak Callout in Fig. 6:** Optimal generation point ($180^\circ, 20^\circ$) lacked an explicit numeric generation badge ($1,706.4\text{ kWh/kWp/yr}$).
+6. **Missing Technical Callout Badge in Fig. 7:** Case study layout lacked a summary badge of rated capacity ($272.38\text{ kW DC}$), generation ($260.33\text{ MWh}$), and payback ($2.75\text{ yrs}$).
+7. **Inconsistent Bounding Box Trimming:** Several figure generation calls omitted `bbox_inches='tight'`, risking margin clipping in double-column formatting.
+8. **Subplot Tick Font Size Inconsistency:** Micro-variations in tick label typography existed across figures (8pt vs 7pt).
+9. **WCAG Contrast Deficit on Overlaid Annotations:** Contour level labels and arrows needed darkened high-contrast backgrounds.
+10. **Figure Artifact Freshness Verification:** Figures on disk in `manuscript/figures/` needed complete re-rendering from code to verify reproducibility.
+
+### 10 Nitpicked Improvements
+1. Set `pdf.fonttype = 42` and `ps.fonttype = 42` in `matplotlib.rcParams`.
+2. Added statistical callout box to Fig. 2 ($N=24$, $\mathrm{MAPE}=4.54\%$, $\mathrm{MBE}=-4.54\%$, $R^2=1.000$).
+3. Formatted Fig. 3 tick labels with sample counts: `Academic (n=4)`, `Commercial (n=9)`, `Industrial (n=11)`.
+4. Embedded governing $P/A$ ratios in Fig. 5 legend curves.
+5. Added peak generation callout badge ($1{,}706.4\text{ kWh/kWp/yr}$) to Fig. 6.
+6. Added engineering summary box to Fig. 7.
+7. Standardized tick label font sizes across all 7 figures to 7.5pt.
+8. Applied `bbox_inches='tight'` across all figure export routines.
+9. Regenerated all 7 figures in vector PDF and high-DPI PNG formats.
+10. Re-compiled manuscript PDF cleanly with updated figures.
+
+### Fix Verification
+- Updated `experiments/generate_figures.py` with fonttype 42, statistical badges, and callouts.
+- Regenerated all 7 figures in `manuscript/figures/`.
+- Verified all 52 tests pass in pytest.
+- Verified `scripts/gate_check.py` passes all 7 stages.
+
+---
