@@ -287,7 +287,9 @@ To demonstrate end-to-end report generation, we present a detailed case study of
 
 The framework automatically queries OSM way ID 204709053, retrieving 14 ordered boundary nodes. Shoelace area calculation yields a gross footprint of $1{,}610.02$~m$^2$, which represents 94.72\% of the independent ground truth reference area ($1{,}699.86$~m$^2$, a relative difference of 5.28\%). 
 
-Applying the standard 1.50~m perimeter setback along the 165.40~m perimeter subtracts 248.10~m$^2$, yielding a net usable rooftop area of $1{,}361.92$~m$^2$. At 20\% module efficiency, the recommended DC capacity is $272.38$~kW DC, paired with a recommended $226.99$~kW AC inverter capacity ($\mathrm{ILR} = 1.20$). Accounting for the building's dominant azimuth ($\psi = 68.2^\circ$, orientation derate $f_{\mathrm{orient}} = 0.5601$), racking tilt ($\beta = 15.0^\circ$), regional irradiance (5.50~PSH), and performance losses ($\mathrm{PR} = 0.85$), the system generates an estimated $260.33$~MWh annually. At an electricity tariff of 0.38~AED/kWh, annual utility savings reach 98,925~AED, achieving an estimated simple payback period of 2.75 years against an estimated turnkey capital cost of \$272,380.
+Applying the standard 1.50~m perimeter setback along the 165.40~m perimeter subtracts 248.10~m$^2$, yielding a net usable rooftop area of $1{,}361.92$~m$^2$. At 20\% module efficiency, the recommended DC capacity is $272.38$~kW DC, paired with a recommended $226.99$~kW AC inverter capacity ($\mathrm{ILR} = 1.20$). Accounting for the building's dominant azimuth ($\psi = 68.2^\circ$, orientation derate $f_{\mathrm{orient}} = 0.5601$), racking tilt ($\beta = 15.0^\circ$), regional irradiance (5.50~PSH), and performance losses ($\mathrm{PR} = 0.85$), the system generates an estimated $260.33$~MWh annually. At an electricity tariff of 0.38~AED/kWh, annual utility savings reach 98,925~AED, achieving an estimated simple payback period of 2.75 years against an estimated turnkey capital cost of 272,384~AED (1,000~AED/kW DC). 
+
+Beyond simple payback, life-cycle discounted cash flow modeling over a 25-year operational lifespan (5.0\% discount rate, 0.5\% annual PV degradation, 1.5\% annual operation and maintenance expense, and 2.0\% tariff escalation) yields a Net Present Value (NPV) of 1,271,167~AED, a discounted payback period of 3.20~years, and a Levelized Cost of Electricity (LCOE) of 0.0943~AED/kWh. Clean solar generation also avoids an estimated 109.34~tCO$_2$e of greenhouse gas emissions annually under the UAE electrical grid emission baseline factor (0.42~kg~CO$_2$e/kWh).
 
 \subsection{Parametric Sensitivity Analysis}
 
@@ -311,7 +313,7 @@ The analysis reveals an important geometric principle: perimeter setback impact 
 For a small commercial facility ($A = 1{,}222$~m$^2$, $P = 142$~m, $P/A = 0.116\text{ m}^{-1}$), a 1.5~m setback consumes 17.4\% of the roof area, leaving 82.6\% usable. In contrast, for an expansive commercial shopping mall ($A = 36{,}155$~m$^2$, $P = 837.3$~m, $P/A = 0.023\text{ m}^{-1}$), the identical 1.5~m setback consumes only 3.5\% of the roof area, leaving 96.5\% usable. For medium institutional facilities such as UoS W5 ($P/A = 0.103\text{ m}^{-1}$), usable area remains 84.6\%. This finding demonstrates that approximate perimeter setback equations are robust for commercial, logistics, and institutional screening across diverse building scales.
 
 
-\subsubsection{Orientation and Tilt Yield Surfaces}
+\subsubsection{Orientation, Tilt, and Uncertainty Bounds}
 
 Fig.~\ref{fig:sensitivity_azimuth_tilt} plots specific annual generation (kWh/kWp/year) across the full spectrum of roof azimuths ($\psi \in [0^\circ, 360^\circ]$) and panel tilts ($\beta \in [0^\circ, 45^\circ]$). Maximum specific generation (1,706.38~kWh/kWp) occurs at optimal South orientation ($\psi = 180^\circ$) and $20^\circ$ tilt. 
 
@@ -322,7 +324,9 @@ Fig.~\ref{fig:sensitivity_azimuth_tilt} plots specific annual generation (kWh/kW
 \label{fig:sensitivity_azimuth_tilt}
 \end{figure}
 
-Due to high direct normal irradiance in the Arabian Gulf, flat installations ($\beta = 0^\circ$) retain 91.2\% of optimal yield. Modules oriented East ($\psi = 90^\circ$) or West ($\psi = 270^\circ$) maintain 85.4\% of optimal yield at standard $15^\circ$ racking. Only arrays oriented toward the northern quadrant ($\psi < 45^\circ$ or $\psi > 315^\circ$) with steep tilts experience severe derating ($>25\%$). This confirms that in low-latitude, high-irradiance regions, flat-roof ballasted systems remain economically viable across diverse architectural orientations.
+Due to high direct normal irradiance in the Arabian Gulf, flat installations ($\beta = 0^\circ$) retain 91.2\% of optimal yield. Modules oriented East ($\psi = 90^\circ$) or West ($\psi = 270^\circ$) maintain 85.4\% of optimal yield at standard $15^\circ$ racking. Only arrays oriented toward the northern quadrant ($\psi < 45^\circ$ or $\psi > 315^\circ$) with steep tilts experience severe derating ($>25\%$). 
+
+To assess financial and yield risk under stochastic solar resource and tariff variations, Monte Carlo uncertainty propagation ($N = 1{,}000$ iterations) was evaluated for Building W5. Stochastically sampling irradiance ($\mu=5.50, \sigma=0.25$~PSH), performance ratio ($\mu=0.85, \sigma=0.03$), tariff rates (0.35 to 0.42~AED/kWh), and turnkey capital costs ($1{,}000 \pm 60$~AED/kW) reveals 5th, 50th, and 95th percentile annual yields of 236.52~MWh, 260.58~MWh, and 287.26~MWh, respectively, corresponding to simple payback ranges between 2.30 and 3.17~years. Furthermore, module degradation sweeps across 0.3\%/year to 1.0\%/year confirm 25-year cumulative energy production between 5,783.98~MWh and 6,279.25~MWh. This confirms that in low-latitude, high-irradiance regions, flat-roof ballasted systems remain economically viable across diverse architectural orientations and operational conditions.
 
 \section{Practitioner Guidance: Operational Scope}
 

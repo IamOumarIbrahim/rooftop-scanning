@@ -420,3 +420,42 @@ Section III (Methodology and Mathematical Formulation) suffered from mathematica
 - Verified `scripts/gate_check.py` passes all 7 stages.
 
 ---
+
+## Pass 12 Review Report (2026-09-19)
+
+### Rejection Rationale
+Section IV (Results and Discussion) presented only static, un-discounted simple payback and single-point generation estimates, leaving life-cycle techno-economics (Net Present Value, discounted payback, Levelized Cost of Electricity), greenhouse gas emissions abatement, and stochastic uncertainty completely unaddressed in the narrative. In a sustainable energy systems conference (SEPS-2026), reviewers expect comprehensive life-cycle appraisal under realistic operational parameters (annual degradation, OPEX inflation, tariff escalation) and quantified meteorological/cost confidence intervals (Monte Carlo percentiles) rather than isolated deterministic points. Furthermore, currency units in Section IV-B contained an accidental dollar symbol (`$272,380` vs AED), table generation code retained duplicate lines, and root pytest execution lacked pythonpath configuration.
+
+### 10 Genuine Blockers
+1. **Missing Life-Cycle DCF Metrics in Narrative:** Section IV-B discussed only simple payback, omitting Net Present Value (NPV), discounted payback, and Levelized Cost of Electricity (LCOE).
+2. **Unreported Avoided Carbon Emissions in Text:** Annual GHG abatement ($109.34\text{ tCO}_2\text{e/yr}$) was missing from the case study discussion despite the conference scope.
+3. **Currency Discrepancy in Case Study Text:** Section IV-B referred to turnkey capital expenditure as `\$272,380`, contradicting the 1,000 AED/kW DC specification in Table IV.
+4. **Omission of Monte Carlo Uncertainty in Section IV-C:** Sensitivity analysis discussed only deterministic azimuth and tilt curves, omitting stochastic confidence intervals (P5, P50, P95) from the simulation framework.
+5. **Unreported Degradation Sweep Bounds:** Multi-year cumulative generation bounds across 0.3%/yr to 1.0%/yr PV module degradation were missing from the results text.
+6. **Dead Duplicate Code in Table Generator:** `experiments/generate_tables.py` contained redundant string formatting blocks in `generate_table_w5_case_study`.
+7. **Pytest Root Import Vulnerability:** Running naked `pytest` from the repository root failed to import modules under `experiments/` due to missing `pythonpath` in `pyproject.toml`.
+8. **Style Gate Em Dash Verification:** Verification that newly added mathematical discussion adheres strictly to the 0 em dash constraint.
+9. **Promotional Vocabulary Audit:** Strict verification of 0 promotional words across Section IV additions.
+10. **Page Count Stability:** Confirmation that Section IV additions preserve the exact 9-page conference budget.
+
+### 10 Nitpicked Improvements
+1. Added 25-year discounted cash flow analysis to Section IV-B (1,271,167 AED NPV at 5% discount rate).
+2. Added discounted payback (3.20 years) and LCOE (0.0943 AED/kWh) to Section IV-B narrative.
+3. Added avoided grid carbon emissions (109.34 tCO2e/yr) to Section IV-B narrative.
+4. Added Monte Carlo P5/P50/P95 yield bounds (236.52, 260.58, 287.26 MWh) to Section IV-C.
+5. Documented 25-year cumulative generation bounds (5,783.98 to 6,279.25 MWh) across degradation rates.
+6. Cleaned up duplicate code blocks in `experiments/generate_tables.py`.
+7. Added `[tool.pytest.ini_options]` with `pythonpath = ["."]` in `pyproject.toml`.
+8. Harmonized capital cost currency formatting in Section IV-B (272,384 AED).
+9. Verified 0 em dashes and 0 promotional words in `manuscript/main.tex`.
+10. Re-compiled PDF cleanly and verified page count remains exactly 9 pages (781.7 KB).
+
+### Fix Verification
+- Integrated life-cycle financial metrics and Monte Carlo uncertainty into `manuscript/main.tex`.
+- Cleaned `experiments/generate_tables.py` and added `[tool.pytest.ini_options]` to `pyproject.toml`.
+- Recompiled manuscript PDF cleanly (exact 9 pages).
+- Verified naked `pytest` runs 52/52 passing tests cleanly.
+- Verified `scripts/gate_check.py` passes all 7 stages.
+
+---
+

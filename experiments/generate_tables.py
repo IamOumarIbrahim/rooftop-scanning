@@ -133,6 +133,8 @@ def generate_table_w5_case_study():
     annual_savings = annual_kwh * tariff
     capex = dc_cap * 1000.0
     payback = estimate_simple_payback(annual_kwh, tariff, cost_per_kw=1000.0, dc_capacity_kw=dc_cap)
+    spec_yield = annual_kwh / dc_cap
+    co2_tonnes = (annual_kwh * 0.42) / 1000.0
 
     tex = f"""\\begin{{table}}[t]
 \\centering
@@ -164,8 +166,10 @@ Orientation Derate ($f_{{\\mathrm{{orient}}}}$) & -- & {derate:.4f} \\\\
 Solar Resource (GHI / PSH) & kWh/m$^2$/day & 5.50 \\\\
 Performance Ratio ($\\mathrm{{PR}}$) & -- & 0.85 \\\\
 Annual Generation ($E_{{\\mathrm{{annual}}}}$) & MWh/yr & {annual_mwh:.2f} \\\\
+Specific Annual Yield & kWh/kWp/yr & {spec_yield:,.1f} \\\\
+Avoided Carbon Emissions & tCO$_2$e/yr & {co2_tonnes:,.2f} \\\\
 Electricity Tariff ($r$) & AED/kWh & {tariff:.2f} \\\\
-Turnkey CAPEX (\\$1,000/kW) & USD & \\${capex:,.0f} \\\\
+Turnkey CAPEX (1,000~AED/kW) & AED & {capex:,.0f} \\\\
 Annual Savings & AED/yr & {annual_savings:,.0f} \\\\
 Simple Payback Period ($T_{{\\mathrm{{pb}}}}$) & years & {payback:.2f} \\\\
 \\bottomrule

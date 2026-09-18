@@ -37,3 +37,7 @@ solarscan = "solarscan.cli:main"
 
 [tool.setuptools]
 packages = ["solarscan"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
