@@ -271,3 +271,40 @@ The empirical evaluation pipeline (`experiments/run_validation.py`) relied solel
 - Verified `scripts/gate_check.py` passes all 7 stages.
 
 ---
+
+## Pass 8 Review Report (2026-09-19)
+
+### Rejection Rationale
+The parametric sensitivity analysis (`experiments/run_sensitivity.py`) was restricted to 1D deterministic parameter sweeps, omitting multi-variable stochastic uncertainty modeling. Real-world commercial PV pre-feasibility decisions operate under coupled uncertainties in solar irradiance variability ($\pm 5\%$), Performance Ratio fluctuations ($\pm 3\%$), and electricity tariff inflation. Without a Monte Carlo uncertainty propagation pipeline producing probabilistic confidence intervals (P5, P50, P95), the sensitivity claims lack probabilistic rigor. Additionally, the sensitivity pipeline lacked automated unit tests in CI and did not explicitly compute the theoretical perimeter-to-area ($P/A$) ratio in returned dictionaries.
+
+### 10 Genuine Blockers
+1. **Omission of Stochastic Monte Carlo Analysis:** Sensitivity evaluation lacked uncertainty propagation over correlated meteorological and economic variables.
+2. **Missing Probabilistic Risk Bounds (P5/P50/P95):** No percentile risk bounds existed for annual energy yield and simple payback periods.
+3. **Untested Sensitivity Pipeline:** `tests/test_sensitivity.py` did not exist in the repository test suite.
+4. **Missing Degradation Rate Sweep:** The impact of varying PV module degradation rates (0.3% to 1.0%/yr) over 25-year asset lifetimes was omitted.
+5. **Missing Explicit $P/A$ Ratio in Setback Outputs:** The governing physical parameter ($P/A$) was unrecorded in programmatic results dictionaries.
+6. **Unseeded Stochastic Risk:** Potential random sampling routines risked non-deterministic results without fixed seed control.
+7. **Boundary Clamping Deficit in Sampling:** Sampled PR or cost parameters risked drifting into non-physical negative regimes without clipping.
+8. **Lack of Invariant Monotonicity Tests:** No automated tests checked that increasing setbacks monotonically decrease usable rooftop fraction.
+9. **Optimal Azimuth Yield Verification Missing:** No test verified that peak yield analytically occurs at true South ($180^\circ$) and $20^\circ$ tilt.
+10. **Desynchronized Documentation Verification:** AGENT.md test count required updating to 52/52 tests.
+
+### 10 Nitpicked Improvements
+1. Implemented `run_monte_carlo_uncertainty` with $N=1,000$ iterations and fixed seed (`seed=42`).
+2. Computed and returned P5, P50, P95 quantiles for annual generation and payback.
+3. Implemented `run_degradation_sensitivity` evaluating 25-year lifetime generation under multiple degradation regimes.
+4. Recorded explicit `pa_ratio` ($m^{-1}$) for each building scale in `run_setback_sensitivity`.
+5. Created `tests/test_sensitivity.py` containing 5 comprehensive unit tests.
+6. Verified that usable area fraction equals 1.0 at zero setback and monotonically decreases.
+7. Verified that optimal azimuth strictly aligns with $180^\circ$ South.
+8. Verified that higher electricity tariffs strictly reduce financial payback periods.
+9. Formatted terminal output to display Monte Carlo risk percentiles during experiment runs.
+10. Synchronized `AGENT.md` test counter to 52/52 passing tests.
+
+### Fix Verification
+- Added `run_monte_carlo_uncertainty`, `run_degradation_sensitivity`, and $P/A$ ratio to `experiments/run_sensitivity.py`.
+- Created `tests/test_sensitivity.py` testing setback monotonicity, optimal orientation, and Monte Carlo convergence.
+- Verified all 52 tests pass in pytest.
+- Verified `scripts/gate_check.py` passes all 7 stages.
+
+---

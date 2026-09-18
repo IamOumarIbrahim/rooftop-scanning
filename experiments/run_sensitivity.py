@@ -31,6 +31,7 @@ def run_setback_sensitivity() -> Dict[str, Any]:
     results = {"setbacks": setbacks.tolist()}
     for key, c in cases.items():
         usable_fractions = []
+        pa_ratio = round(c["p"] / c["area"], 4)
         for s in setbacks:
             u = calculate_usable_area(c["area"], c["p"], s, obstruction_area=0.0)
             usable_fractions.append(round(u / c["area"], 4))
@@ -38,6 +39,7 @@ def run_setback_sensitivity() -> Dict[str, Any]:
             "name": c["name"],
             "area": c["area"],
             "perimeter": c["p"],
+            "pa_ratio": pa_ratio,
             "usable_fractions": usable_fractions
         }
     return results
@@ -93,6 +95,61 @@ def run_economic_sensitivity() -> Dict[str, Any]:
     }
 
 
+def run_degradation_sensitivity(
+    initial_kwh: float = 260330.0,
+    lifetime_years: int = 25
+) -> Dict[str, Any]:
+    """
+    Evaluates cumulative 25-year energy generation under varying annual PV degradation rates
+    ranging from 0.3%/yr (premium heterojunction / TOPCon) to 1.0%/yr (standard multicrystalline).
+    """
+    degradation_rates = [0.003, 0.005, 0.007, 0.010]
+    lifetime_totals = {}
+    for deg in degradation_rates:
+        cum_gen = sum(initial_kwh * ((1.0 - deg) ** t) for t in range(lifetime_years))
+        lifetime_totals[deg] = round(cum_gen / 1000.0, 2)  # MWh
+    return {
+        "degradation_rates": degradation_rates,
+        "lifetime_mwh": lifetime_totals
+    }
+
+
+def run_monte_carlo_uncertainty(
+    dc_capacity_kw: float = 272.38,
+    n_iterations: int = 1000,
+    random_seed: int = 42
+) -> Dict[str, Any]:
+    """
+    Performs Monte Carlo uncertainty propagation over solar pre-feasibility modeling.
+    Stochastically samples:
+    - Peak Sun Hours: Normal(mu=5.5, sigma=0.25)
+    - System Loss / Performance Ratio: Normal(mu=0.85, sigma=0.03)
+    - Electricity Tariff: Uniform(0.35, 0.42)
+    - Turnkey Cost: Normal(mu=1000, sigma=60)
+    """
+    np.random.seed(random_seed)
+    psh_samples = np.random.normal(5.50, 0.25, n_iterations)
+    pr_samples = np.clip(np.random.normal(0.85, 0.03, n_iterations), 0.70, 0.95)
+    tariff_samples = np.random.uniform(0.35, 0.42, n_iterations)
+    cost_samples = np.clip(np.random.normal(1000.0, 60.0, n_iterations), 800.0, 1300.0)
+
+    # Fixed orientation factor for UoS W5 case study
+    f_orient = 0.5601
+
+    yields = dc_capacity_kw * psh_samples * 365.0 * f_orient * pr_samples
+    paybacks = (dc_capacity_kw * cost_samples) / (yields * tariff_samples)
+
+    return {
+        "n_iterations": n_iterations,
+        "yield_mwh_p5": round(float(np.percentile(yields, 5)) / 1000.0, 2),
+        "yield_mwh_p50": round(float(np.percentile(yields, 50)) / 1000.0, 2),
+        "yield_mwh_p95": round(float(np.percentile(yields, 95)) / 1000.0, 2),
+        "payback_yrs_p5": round(float(np.percentile(paybacks, 5)), 2),
+        "payback_yrs_p50": round(float(np.percentile(paybacks, 50)), 2),
+        "payback_yrs_p95": round(float(np.percentile(paybacks, 95)), 2)
+    }
+
+
 def main():
     sb = run_setback_sensitivity()
     print("--- Setback Sensitivity (Usable Area Fraction) ---")
@@ -107,6 +164,12 @@ def main():
     for c, pbs in econ['payback_table'].items():
         print(f"CAPEX ${c:4.0f}/kW: {pbs}")
 
+    mc = run_monte_carlo_uncertainty()
+    print("\n--- Monte Carlo Uncertainty (UoS W5, 1000 runs) ---")
+    print(f"Annual Yield: P5={mc['yield_mwh_p5']} MWh | P50={mc['yield_mwh_p50']} MWh | P95={mc['yield_mwh_p95']} MWh")
+    print(f"Payback:      P5={mc['payback_yrs_p5']} yrs | P50={mc['payback_yrs_p50']} yrs | P95={mc['payback_yrs_p95']} yrs")
+
 
 if __name__ == "__main__":
     main()
+
