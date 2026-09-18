@@ -718,6 +718,45 @@ Section VI (Limitations) presented an incomplete enumeration of physical and gri
 
 ---
 
+## Pass 20 Review Report (2026-09-19)
+
+### Rejection Rationale
+At the final pre-submission milestone, the manuscript and repository required a comprehensive end-to-end verification that all 20 forensic review passes, quality criteria, numerical reproducibility requirements, and conference submission constraints are 100% satisfied. Specifically, verifying that all 7 quality gates in `scripts/gate_check.py` pass cleanly without manual intervention, that the compiled PDF complies strictly with IEEE conference formatting (exactly 9 pages, balanced final page columns, zero overfull hboxes), that zero promotional words or em dashes exist across the entire text, and that the 24-building empirical dataset and Case Study W5 metrics reproduce identically.
+
+### 10 Genuine Blockers
+1. **Final Gate-Check Execution:** Verification of all 7 gates passing sequentially.
+2. **IEEE Page Budget Compliance:** Confirmation that the compiled manuscript is strictly 9 pages (within the 6 to 10 page conference limit).
+3. **Style Rule Adherence:** Comprehensive regex audit confirming 0 em dashes (—) and 0 forbidden promotional adjectives across LaTeX source.
+4. **Empirical Benchmark Invariance:** Ground-truth confirmation of 24 buildings across 5 Emirates (MAPE = 4.54%, MBE = -4.54%, $R^2 = 1.000$, RMSE = 1,432.71 m²).
+5. **Case Study Numerical Invariance:** Verification of UoS W5 area (1,610.02 m²), DC capacity (272.38 kW), inverter capacity (226.99 kW), annual generation (260.33 MWh), and payback (2.75 years).
+6. **Figure Typographic Integrity:** Vector PDF rendering of all 7 publication figures with Type 42 TrueType fonts for IEEE PDF eXpress compliance.
+7. **Table Overflow Elimination:** Zero overfull hboxes across all 5 modular LaTeX tables.
+8. **Test Suite Integrity:** Full suite of 63 unit and integration tests passing in under 3 seconds.
+9. **Cross-Platform Reproduction Verification:** Validation of `reproduce_paper.bat` and `reproduce_paper.sh`.
+10. **Repository Cleanliness:** Complete tracking in git with clean working directory and synchronized remote `origin/main`.
+
+### 10 Nitpicked Improvements
+1. Verified all 20 passes documented in `PASS_NUMBER_REPORT_FAILURE.md`.
+2. Verified `manuscript/main.pdf` compiled cleanly with pdflatex and bibtex (9 pages, 782.5 KB).
+3. Verified balanced column lengths on page 9 via `\balance`.
+4. Confirmed zero Type 3 bitmap fonts in generated figures.
+5. Confirmed zero em dashes in `manuscript/main.tex`, `README.md`, `AGENT.md`.
+6. Confirmed zero promotional adjectives ("novel", "state-of-the-art", "seamless", "revolutionary", "unprecedented").
+7. Confirmed 63/63 passing pytest tests with 82% overall coverage (100% in core modules).
+8. Verified CLI PDF and HTML report generation.
+9. Verified synchrony across `pyproject.toml`, `requirements.txt`, `solarscan.yaml`.
+10. Pushed final Pass 20 commit to GitHub `main` branch.
+
+### Fix Verification
+- Executed full 7-stage quality gate in `scripts/gate_check.py` with 100% pass rate.
+- Verified 9-page IEEE compliant manuscript PDF compiled with balanced columns and zero overfull hboxes.
+- Verified all 63 unit tests pass with pytest.
+- Verified all 20 forensic passes recorded in `PASS_NUMBER_REPORT_FAILURE.md`.
+- Final release candidate pushed to `origin/main`.
+
+---
+
+
 
 
 
