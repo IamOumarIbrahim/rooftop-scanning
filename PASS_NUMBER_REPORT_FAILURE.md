@@ -608,6 +608,44 @@ Continuous Integration (CI) configuration in `.github/workflows/ci.yml` lacked m
 
 ---
 
+## Pass 17 Review Report (2026-09-19)
+
+### Rejection Rationale
+Static analysis and library architecture suffered from missing public export boundaries in `solarscan/__init__.py` (exposing an empty module without `__all__`), and coordinate extraction in `solarscan/osm.py` had asymmetric validation where priorities 1 through 4 (pinned locations, viewport URLs, query parameters, search endpoints) extracted coordinates without bounds verification ($[-90, 90]$ latitude and $[-180, 180]$ longitude), only checking priority 5. In an academic software framework, lack of explicit `__all__` symbols hinders clean programmatic re-use by researchers (`from solarscan import calculate_shoelace_area`), and unchecked coordinate regex extraction risks propagating non-physical geographical inputs to downstream trigonometric projections.
+
+### 10 Genuine Blockers
+1. **Empty Public API Export Boundary:** `solarscan/__init__.py` lacked export definitions (`__all__`), preventing direct package-level imports.
+2. **Asymmetric Coordinate Bounds Checking:** URL priorities 1 to 4 lacked $[-90, 90]$ and $[-180, 180]$ sanity validation in `solarscan/osm.py`.
+3. **Missing Module-Level Discovery:** Key analytical functions (geometry, sizing, yield, config) required nested multi-level imports.
+4. **Unvalidated Query Strings in URL Extraction:** Corrupted or mock URL parameters with out-of-range floats bypassed geocoder safety guards.
+5. **Type Signature Completeness:** Ensure explicit return type hints across core functions.
+6. **Static Analysis Readiness:** Public symbols exported in `__all__` conform to standard Python packaging best practices (PEP 8, PEP 484).
+7. **Style Gate Em Dash Verification:** 0 em dashes in module docstrings and comments.
+8. **Promotional Vocabulary Check:** Zero promotional words across public docstrings.
+9. **Case Study Regeneration Invariance:** UoS W5 metrics remain 100% identical.
+10. **Page Count Stability:** Manuscript PDF strictly maintained at 9 pages (781.9 KB).
+
+### 10 Nitpicked Improvements
+1. Populated `solarscan/__init__.py` with 19 core public symbols.
+2. Declared explicit `__all__` list in `solarscan/__init__.py`.
+3. Created helper `_is_valid` in `parse_google_maps_url` enforcing strict coordinate domain limits across all 5 parsing patterns.
+4. Added type annotations to public API imports.
+5. Verified all 63 unit tests pass cleanly.
+6. Verified `python scripts/gate_check.py` passes all 7 stages.
+7. Confirmed no regressions in CLI or report generation.
+8. Checked docstrings for clear technical English without promotional terms.
+9. Verified 0 em dashes across all code comments.
+10. Verified git tree hygiene and committed cleanly.
+
+### Fix Verification
+- Exported complete public API and `__all__` in `solarscan/__init__.py`.
+- Hardened coordinate domain validation across all 5 URL extraction priority branches in `solarscan/osm.py`.
+- Verified all 63 unit tests pass cleanly.
+- Verified `scripts/gate_check.py` passes all 7 stages.
+
+---
+
+
 
 
 

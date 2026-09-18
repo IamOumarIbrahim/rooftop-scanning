@@ -40,31 +40,42 @@ def parse_google_maps_url(text: str) -> Optional[Tuple[float, float]]:
         except Exception:
             pass
 
+    def _is_valid(lat: float, lon: float) -> bool:
+        return -90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0
+
     # Priority 1: Exact Pinned Building Location (!3d<lat>!4d<lon>)
     match_pin = re.search(r'!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)', text)
     if match_pin:
-        return float(match_pin.group(1)), float(match_pin.group(2))
+        lat, lon = float(match_pin.group(1)), float(match_pin.group(2))
+        if _is_valid(lat, lon):
+            return lat, lon
 
     # Priority 2: Map Viewport / Camera Coordinates (@lat,lon)
     match_view = re.search(r'@(-?\d+\.\d+),(-?\d+\.\d+)', text)
     if match_view:
-        return float(match_view.group(1)), float(match_view.group(2))
+        lat, lon = float(match_view.group(1)), float(match_view.group(2))
+        if _is_valid(lat, lon):
+            return lat, lon
 
     # Priority 3: Query parameters (q=lat,lon or ll=lat,lon)
     match_q = re.search(r'[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)', text)
     if match_q:
-        return float(match_q.group(1)), float(match_q.group(2))
+        lat, lon = float(match_q.group(1)), float(match_q.group(2))
+        if _is_valid(lat, lon):
+            return lat, lon
 
     # Priority 4: /place/lat,lon or /search/lat,lon
     match_p = re.search(r'/(?:place|search)/(-?\d+\.\d+)[,\+]+(-?\d+\.\d+)', text)
     if match_p:
-        return float(match_p.group(1)), float(match_p.group(2))
+        lat, lon = float(match_p.group(1)), float(match_p.group(2))
+        if _is_valid(lat, lon):
+            return lat, lon
 
     # Priority 5: Raw "lat, lon"
     match_raw = re.search(r'^\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*$', text)
     if match_raw:
         lat, lon = float(match_raw.group(1)), float(match_raw.group(2))
-        if -90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0:
+        if _is_valid(lat, lon):
             return lat, lon
 
     return None
