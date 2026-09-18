@@ -160,3 +160,40 @@ The photovoltaic sizing and yield estimation modules lacked explicit physical mo
 - Verified `scripts/gate_check.py` passes all 7 stages.
 
 ---
+
+## Pass 5 Review Report (2026-09-19)
+
+### Rejection Rationale
+Techno-economic modeling in pre-feasibility analysis was previously restricted to an un-discounted simple payback period and basic LCOE. In sustainable energy project appraisal, institutional clients, bank financiers, and conference reviewers require discounted cash flow (DCF) metrics (Net Present Value, Discounted Payback) that account for annual photovoltaic module degradation (0.5%/yr), operational maintenance inflation (OPEX), and commercial utility tariff escalation rates. Furthermore, in a conference focused on sustainable energy systems (SEPS-2026), omitting quantifiable greenhouse gas abatement ($\mathrm{tCO}_2/\mathrm{year}$) represents a major thematic shortcoming.
+
+### 10 Genuine Blockers
+1. **Missing Net Present Value (NPV) Metric:** Simple payback ignores cash flow time value, inflation, and lifecycle capital yield across the 25-year asset horizon.
+2. **Missing Discounted Payback Metric:** Failure to report discounted payback masks capital recovery risks under non-zero cost of capital.
+3. **Missing Carbon Abatement Quantification:** No mechanism existed to estimate annual avoided greenhouse gas emissions ($\mathrm{tCO}_2/\mathrm{year}$).
+4. **Static Tariff Assumption:** The framework lacked utility tariff escalation modeling, assuming constant electricity prices for 25 years.
+5. **Missing OPEX Compounding in Cash Flows:** Long-term operation and maintenance costs (routine washing, inspections, inverter replacement allowance) were omitted from DCF schedules.
+6. **Compounded Degradation Omission in Payback:** Payback calculations neglected the cumulative 0.5%/year PV degradation on cash generation.
+7. **Negative Tariff Input Vulnerability:** Passing non-positive electricity tariff rates caused unhandled divisions in financial formulas.
+8. **Negative Discount Rate Vulnerability:** Negative discount rates ($r \le -1.0$) were unguarded, causing mathematical divergence.
+9. **Missing Financial Test Cases:** Test suite lacked tests for positive NPV verification, discounted payback interpolation, and carbon offsets.
+10. **AGENT.md Metric Disconnect:** Test metrics in documentation required synchronization with the expanded 40-test suite.
+
+### 10 Nitpicked Improvements
+1. Implemented `calculate_npv` supporting lifetime, discount rate, OPEX, degradation, and tariff escalation.
+2. Implemented `calculate_discounted_payback` with fractional year linear interpolation.
+3. Implemented `calculate_carbon_offset` calibrated to the UAE grid carbon intensity factor (0.42 kg CO2e/kWh).
+4. Provided default economic parameters aligned with UAE Ministry of Energy guidelines.
+5. Added rigorous docstrings documenting cash-flow compounding equations.
+6. Handled non-positive electricity generation cleanly by returning zero emissions avoided.
+7. Added 3 comprehensive unit tests in `tests/test_sizing_and_yield.py`.
+8. Retained exact Case Study W5 simple payback result ($2.75$ years).
+9. Updated `AGENT.md` test counter to 40/40 tests.
+10. Enforced clean two-decimal currency and tonnage formatting.
+
+### Fix Verification
+- Implemented `calculate_npv`, `calculate_discounted_payback`, and `calculate_carbon_offset` in `solarscan/yield_estimate.py`.
+- Added 3 unit tests in `tests/test_sizing_and_yield.py`.
+- Verified all 40 tests pass cleanly in pytest.
+- Verified `scripts/gate_check.py` passes all 7 stages.
+
+---

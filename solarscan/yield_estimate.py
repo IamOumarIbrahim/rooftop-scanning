@@ -169,3 +169,83 @@ def calculate_lcoe(
         return float('inf')
         
     return round(discounted_costs / discounted_energy, 4)
+
+
+def calculate_npv(
+    annual_kwh: float,
+    tariff_per_kwh: float,
+    dc_capacity_kw: float,
+    cost_per_kw: float = 1000.0,
+    discount_rate: float = 0.05,
+    lifetime_years: int = 25,
+    om_cost_fraction: float = 0.015,
+    annual_degradation: float = 0.005,
+    tariff_escalation: float = 0.02
+) -> float:
+    """
+    Computes Net Present Value (NPV) over system lifetime in currency units.
+    
+    Accounts for annual module degradation, operational maintenance costs (OPEX),
+    and electricity tariff escalation under discounted cash flow (DCF).
+    """
+    capex = dc_capacity_kw * cost_per_kw
+    annual_om_base = capex * om_cost_fraction
+    npv = -capex
+    
+    for year in range(1, lifetime_years + 1):
+        df = (1.0 + discount_rate) ** year
+        gen_year = annual_kwh * ((1.0 - annual_degradation) ** (year - 1))
+        tariff_year = tariff_per_kwh * ((1.0 + tariff_escalation) ** (year - 1))
+        revenue_year = gen_year * tariff_year
+        om_year = annual_om_base * ((1.0 + 0.02) ** (year - 1))
+        net_cf = revenue_year - om_year
+        npv += net_cf / df
+        
+    return round(npv, 2)
+
+
+def calculate_discounted_payback(
+    annual_kwh: float,
+    tariff_per_kwh: float,
+    dc_capacity_kw: float,
+    cost_per_kw: float = 1000.0,
+    discount_rate: float = 0.05,
+    lifetime_years: int = 25,
+    om_cost_fraction: float = 0.015,
+    annual_degradation: float = 0.005
+) -> float:
+    """
+    Calculates the discounted payback period in years where cumulative discounted
+    savings exceed initial capital expenditure.
+    """
+    capex = dc_capacity_kw * cost_per_kw
+    annual_om = capex * om_cost_fraction
+    cum_dcf = -capex
+    
+    for year in range(1, lifetime_years + 1):
+        df = (1.0 + discount_rate) ** year
+        gen_year = annual_kwh * ((1.0 - annual_degradation) ** (year - 1))
+        net_cf = (gen_year * tariff_per_kwh) - annual_om
+        prev_cum = cum_dcf
+        cum_dcf += net_cf / df
+        if cum_dcf >= 0:
+            # Linear interpolation for fractional year
+            fraction = abs(prev_cum) / (net_cf / df)
+            return round((year - 1) + fraction, 2)
+            
+    return float('inf')
+
+
+def calculate_carbon_offset(
+    annual_kwh: float,
+    grid_emission_factor_kg_per_kwh: float = 0.42
+) -> float:
+    """
+    Estimates avoided greenhouse gas emissions in metric tonnes of CO2 equivalent per year.
+    Default baseline reflects UAE national electrical grid emission intensity (0.42 kg CO2e/kWh).
+    """
+    if annual_kwh <= 0.0 or grid_emission_factor_kg_per_kwh <= 0.0:
+        return 0.0
+    tonnes_co2 = (annual_kwh * grid_emission_factor_kg_per_kwh) / 1000.0
+    return round(tonnes_co2, 2)
+

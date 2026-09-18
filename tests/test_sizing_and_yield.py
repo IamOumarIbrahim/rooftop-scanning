@@ -18,7 +18,10 @@ from solarscan.yield_estimate import (
     calculate_temperature_derate,
     calculate_inverter_clipping_loss,
     calculate_specific_yield,
-    breakdown_performance_ratio
+    breakdown_performance_ratio,
+    calculate_npv,
+    calculate_discounted_payback,
+    calculate_carbon_offset
 )
 
 
@@ -134,4 +137,37 @@ def test_calculate_specific_yield():
 def test_breakdown_performance_ratio():
     pr = breakdown_performance_ratio(ambient_temp_c=35.0)
     assert 0.75 <= pr <= 0.90
+
+
+def test_calculate_npv():
+    npv = calculate_npv(
+        annual_kwh=260000.0,
+        tariff_per_kwh=0.38,
+        dc_capacity_kw=272.0,
+        cost_per_kw=1000.0,
+        discount_rate=0.06,
+        lifetime_years=25
+    )
+    # High positive NPV expected for commercial solar with rapid payback
+    assert npv > 500000.0
+
+
+def test_calculate_discounted_payback():
+    dpb = calculate_discounted_payback(
+        annual_kwh=260000.0,
+        tariff_per_kwh=0.38,
+        dc_capacity_kw=272.0,
+        cost_per_kw=1000.0,
+        discount_rate=0.06
+    )
+    # Discounted payback slightly longer than simple payback (2.75 yrs), approx 3.0-3.5 yrs
+    assert 2.5 <= dpb <= 4.0
+
+
+def test_calculate_carbon_offset():
+    co2 = calculate_carbon_offset(annual_kwh=260000.0, grid_emission_factor_kg_per_kwh=0.42)
+    expected = (260000.0 * 0.42) / 1000.0
+    assert math.isclose(co2, expected, rel_tol=1e-3)
+    assert calculate_carbon_offset(0.0) == 0.0
+
 
