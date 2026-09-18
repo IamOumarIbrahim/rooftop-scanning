@@ -1,0 +1,38 @@
+{
+  "id": "shj_ind_fab10",
+  "name": "Sharjah Industrial Fabrication Hall",
+  "osm_building_id": 224077287,
+  "lat": 25.30402,
+  "lon": 55.41753,
+  "category": "Industrial",
+  "emirate": "Sharjah",
+  "osm_area_m2": 1517.35,
+  "reference_area_m2": 1588.67,
+  "polygon_coords": [
+    [
+      25.3039461,
+      55.4173712
+    ],
+    [
+      25.3039724,
+      55.4173356
+    ],
+    [
+      25.3043228,
+      55.4176534
+    ],
+    [
+      25.3041511,
+      55.4178851
+    ],
+    [
+      25.3038007,
+      55.4175673
+    ],
+    [
+      25.3039461,
+      55.4173712
+    ]
+  ],
+  "building_id": 224077287
+}

@@ -1,0 +1,108 @@
+"""
+Yield estimation module for rooftop solar pre-feasibility analysis.
+Provides orientation derating, annual AC energy generation estimation,
+and financial payback modeling.
+"""
+
+import math
+
+
+def calculate_orientation_derate(azimuth_deg: float, tilt_deg: float) -> float:
+    """
+    Computes an empirical orientation and tilt derating factor f_orient in [0.5, 1.0].
+    
+    The optimal orientation in the Northern Hemisphere is South (180 deg) at a tilt
+    angle approximately matching local latitude (15 to 25 deg in the UAE/Gulf).
+    
+    Formulation:
+        delta_azimuth = |((azimuth - 180 + 180) mod 360) - 180|
+        f_azimuth = cos(radians(delta_azimuth / 2))
+        f_tilt = cos(radians(|tilt - 20| / 2))
+        f_orient = max(0.5, f_azimuth * f_tilt)
+    """
+    dev_from_south = abs(((azimuth_deg - 180.0 + 180.0) % 360.0) - 180.0)
+    
+    azimuth_factor = math.cos(math.radians(dev_from_south / 2.0))
+    tilt_factor = math.cos(math.radians(abs(tilt_deg - 20.0) / 2.0))
+    
+    derate = max(0.5, azimuth_factor * tilt_factor)
+    return round(derate, 4)
+
+
+def estimate_annual_yield(
+    dc_capacity_kw: float,
+    tilt_deg: float = 15.0,
+    azimuth_deg: float = 180.0,
+    peak_sun_hours_per_day: float = 5.5,
+    system_loss_factor: float = 0.85
+) -> float:
+    """
+    Estimates total annual AC energy generation in kilowatt-hours (kWh/year).
+    
+    Default parameters reflect Arabian Gulf solar resource:
+        Peak Sun Hours (PSH): 5.5 kWh/m^2/day (GHI ~ 2000 kWh/m^2/year)
+        System loss factor (PR): 0.85 (inverter, temperature derating, dust/soiling, wiring)
+        
+    Formula:
+        E_annual = P_DC * PSH * 365 * f_orient * PR
+    """
+    derate = calculate_orientation_derate(azimuth_deg, tilt_deg)
+    annual_kwh = dc_capacity_kw * peak_sun_hours_per_day * 365.0 * derate * system_loss_factor
+    return round(annual_kwh, 2)
+
+
+def estimate_simple_payback(
+    annual_kwh: float,
+    rate_per_kwh: float,
+    cost_per_kw: float = 1000.0,
+    dc_capacity_kw: float = 10.0
+) -> float:
+    """
+    Estimates simple financial payback period in years.
+    
+    Formula:
+        CAPEX = P_DC * cost_per_kw
+        Annual_Savings = E_annual * rate_per_kwh
+        T_payback = CAPEX / Annual_Savings
+    """
+    annual_savings = annual_kwh * rate_per_kwh
+    total_cost = dc_capacity_kw * cost_per_kw
+    
+    if annual_savings <= 0:
+        return float('inf')
+    
+    payback_years = total_cost / annual_savings
+    return round(payback_years, 2)
+
+
+def calculate_lcoe(
+    annual_kwh: float,
+    dc_capacity_kw: float,
+    cost_per_kw: float = 1000.0,
+    discount_rate: float = 0.05,
+    lifetime_years: int = 25,
+    om_cost_fraction: float = 0.015,
+    annual_degradation: float = 0.005
+) -> float:
+    """
+    Computes Levelized Cost of Electricity (LCOE) in currency units per kWh.
+    
+    Formula:
+        LCOE = [ CAPEX + sum_{t=1}^N (OPEX_t / (1+r)^t) ] / [ sum_{t=1}^N (E_t / (1+r)^t) ]
+    """
+    capex = dc_capacity_kw * cost_per_kw
+    annual_om = capex * om_cost_fraction
+    
+    discounted_costs = capex
+    discounted_energy = 0.0
+    
+    for year in range(1, lifetime_years + 1):
+        df = (1.0 + discount_rate) ** year
+        discounted_costs += annual_om / df
+        gen_year = annual_kwh * ((1.0 - annual_degradation) ** (year - 1))
+        discounted_energy += gen_year / df
+        
+    if discounted_energy <= 0:
+        return float('inf')
+        
+    return round(discounted_costs / discounted_energy, 4)

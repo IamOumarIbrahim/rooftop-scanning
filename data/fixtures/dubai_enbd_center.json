@@ -1,0 +1,38 @@
+{
+  "id": "dubai_enbd_center",
+  "name": "Emirates NBD Operations Center",
+  "osm_building_id": 242038225,
+  "lat": 25.10674,
+  "lon": 55.20434,
+  "category": "Commercial",
+  "emirate": "Dubai",
+  "osm_area_m2": 3267.89,
+  "reference_area_m2": 3418.21,
+  "polygon_coords": [
+    [
+      25.1067745,
+      55.2039731
+    ],
+    [
+      25.1063467,
+      55.2042838
+    ],
+    [
+      25.1066303,
+      55.2047601
+    ],
+    [
+      25.1068798,
+      55.2045789
+    ],
+    [
+      25.1070581,
+      55.2044494
+    ],
+    [
+      25.1067745,
+      55.2039731
+    ]
+  ],
+  "building_id": 242038225
+}

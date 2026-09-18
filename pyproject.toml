@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "solarscan"
+version = "0.2.0"
+description = "Automated Rooftop Solar Pre-Feasibility Assessment from OpenStreetMap Building Footprints"
+readme = "README.md"
+authors = [
+    { name = "Oumar Mamoun Ibrahim", email = "U22200741@sharjah.ac.ae" },
+    { name = "Mohamad Khairi bin Ishak", email = "mishak@sharjah.ac.ae" }
+]
+license = "MIT"
+requires-python = ">=3.9"
+keywords = ["solar", "photovoltaic", "openstreetmap", "pre-feasibility", "gis", "energy-modeling"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: GIS"
+]
+dependencies = [
+    "requests",
+    "pyyaml",
+    "matplotlib",
+    "reportlab",
+    "shapely"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/IamOumarIbrahim/rooftop-scanning"
+"Repository" = "https://github.com/IamOumarIbrahim/rooftop-scanning.git"
+
+[project.scripts]
+solarscan = "solarscan.cli:main"
+
+[tool.setuptools]
+packages = ["solarscan"]

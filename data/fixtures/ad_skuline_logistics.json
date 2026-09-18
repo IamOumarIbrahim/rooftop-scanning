@@ -1,0 +1,42 @@
+{
+  "id": "ad_skuline_logistics",
+  "name": "Sku Line Logistics Warehouse",
+  "osm_building_id": 117601166,
+  "lat": 24.36992,
+  "lon": 54.51718,
+  "category": "Industrial",
+  "emirate": "Abu Dhabi",
+  "osm_area_m2": 1720.06,
+  "reference_area_m2": 1800.9,
+  "polygon_coords": [
+    [
+      24.370149,
+      54.5174099
+    ],
+    [
+      24.3694626,
+      54.5174361
+    ],
+    [
+      24.3694582,
+      54.5172985
+    ],
+    [
+      24.3700412,
+      54.5172763
+    ],
+    [
+      24.3700234,
+      54.5167144
+    ],
+    [
+      24.3701268,
+      54.5167105
+    ],
+    [
+      24.370149,
+      54.5174099
+    ]
+  ],
+  "building_id": 117601166
+}

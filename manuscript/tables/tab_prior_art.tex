@@ -1,0 +1,20 @@
+\begin{table*}[t]
+\centering
+\caption{Systematic Comparison of Rooftop Photovoltaic Potential and Screening Methodologies}
+\label{tab:prior_art}
+\footnotesize
+\begin{tabular}{p{3.0cm}p{3.0cm}ccp{2.8cm}p{5.2cm}}
+\toprule
+\textbf{Study / Platform} & \textbf{Primary Data Source} & \textbf{Open Source} & \textbf{End-to-End} & \textbf{Demonstrated Region} & \textbf{Key Limitation for First Decision} \\
+\midrule
+Google Project Sunroof & Airborne LiDAR & No & Yes & USA, Germany & Zero coverage in UAE, GCC, and Global South; proprietary. \\
+Google Solar API & High-Res Satellite & No & Partial & $\sim$40 OECD nations & Paid per-request API; zero coverage in UAE and GCC. \\
+Assouline et al. (2017) \cite{assouline2017} & Cadastre + LiDAR & No & No & Switzerland & Regional potential only; requires municipal GIS cadastre. \\
+Mainzer et al. (2017) \cite{mainzer2017} & OpenStreetMap + Aerial & No & No & Germany & European pitched roofs; no automated address screener. \\
+Walch et al. (2020) \cite{walch2020} & 3D CityGML (LoD2) & Partial & No & Switzerland & Requires 3D municipal models unavailable in MENA. \\
+Rees et al. (2025) \cite{rees2025} & Airborne LiDAR + OSM & Open Data & No & Troms\o, Norway & High-latitude focus; requires desktop GIS software. \\
+pvlib-python \cite{holmgren2018} & None (Physics Engine) & Yes & Partial & Global & Requires pre-determined roof geometry; no spatial extraction. \\
+\textbf{This Work (SolarScan)} & \textbf{OpenStreetMap Only} & \textbf{Yes} & \textbf{Yes} & \textbf{United Arab Emirates} & \textbf{Targeted for flat roofs; zero API fees or GIS dependencies.} \\
+\bottomrule
+\end{tabular}
+\end{table*}

@@ -1,0 +1,34 @@
+{
+  "id": "dubai_ondemand_auto",
+  "name": "On Demand Logistics & Service Depot",
+  "osm_building_id": 304663074,
+  "lat": 25.14582,
+  "lon": 55.23143,
+  "category": "Industrial",
+  "emirate": "Dubai",
+  "osm_area_m2": 1704.39,
+  "reference_area_m2": 1781.09,
+  "polygon_coords": [
+    [
+      25.1460262,
+      55.231362
+    ],
+    [
+      25.1457782,
+      55.2317371
+    ],
+    [
+      25.1455135,
+      55.2315235
+    ],
+    [
+      25.1457616,
+      55.2311483
+    ],
+    [
+      25.1460262,
+      55.231362
+    ]
+  ],
+  "building_id": 304663074
+}

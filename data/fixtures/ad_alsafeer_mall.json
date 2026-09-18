@@ -1,0 +1,34 @@
+{
+  "id": "ad_alsafeer_mall",
+  "name": "AlSafeer Mall Mussafah",
+  "osm_building_id": 116691880,
+  "lat": 24.34286,
+  "lon": 54.53039,
+  "category": "Commercial",
+  "emirate": "Abu Dhabi",
+  "osm_area_m2": 2840.72,
+  "reference_area_m2": 2965.71,
+  "polygon_coords": [
+    [
+      24.3430328,
+      54.5306241
+    ],
+    [
+      24.3426133,
+      54.5306363
+    ],
+    [
+      24.3425988,
+      54.5300356
+    ],
+    [
+      24.3430183,
+      54.5300234
+    ],
+    [
+      24.3430328,
+      54.5306241
+    ]
+  ],
+  "building_id": 116691880
+}
