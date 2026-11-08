@@ -1,47 +1,24 @@
-name: Rooftop-Scanning Quality Gate CI
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
 
 jobs:
-  test-and-gate-check:
+  test:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12"]
-
+        python-version: ["3.10", "3.12"]
     runs-on: ${{ matrix.os }}
-
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "pip"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest-cov
-          pip install -e .
-
-      - name: Run Pytest Suite with Coverage
-        run: |
-          pytest -v --cov=solarscan --cov-report=term tests/
-
-      - name: Run Empirical Validation & Sensitivity Scripts
-        run: |
-          python experiments/run_validation.py
-          python experiments/run_sensitivity.py
-
-      - name: Verify Reproducibility Quality Gate (Stages 1-5 & 7)
-        run: |
-          python -c "from scripts.gate_check import step1_run_unit_tests, step2_verify_validation_dataset, step3_verify_case_study_regeneration, step4_verify_figures_and_tables, step5_verify_style_and_agent_compliance, step7_verify_cli_and_report_generation; step1_run_unit_tests(); step2_verify_validation_dataset(); step3_verify_case_study_regeneration(); step4_verify_figures_and_tables(); step5_verify_style_and_agent_compliance(); step7_verify_cli_and_report_generation()"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - name: Regenerate every result and check nothing changed
+        run: python scripts/reproduce.py --no-pdf --verify

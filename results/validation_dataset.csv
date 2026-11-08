@@ -1,0 +1,25 @@
+id,name,emirate,category,osm_way_id,n_vertices,osm_area,osm_perimeter,pa_ratio,axis_deg,manual_area,manual_area_raw,trace_qc,manual_source,osm_status,ms_area,ms_iou
+uos_w5,University Building W5 (Computer Science),Sharjah,Academic,204709053,13,1606.7542,165.232,0.1028,33.93,1591.3696,1591.3696,pass,kml,correct,1742.1749,0.7148
+uos_m4,University Building M4,Sharjah,Academic,204692741,10,1607.9978,169.6648,0.1055,34.46,1549.6662,1549.6662,pass,kml,correct,1655.9929,0.6175
+uos_m11,University Building M11,Sharjah,Academic,204702512,44,3594.9546,262.7263,0.0731,169.56,3847.5552,3847.5552,pass,kml,correct,3418.2664,0.7379
+uos_m13,University annex building,Sharjah,Academic,204961534,8,124.1939,47.9669,0.3862,33.49,103.1833,103.1833,pass,kml,multi_level,129.5489,0.3234
+moe_dubai,Unnamed building at Mall of the Emirates site,Dubai,Commercial,1136937509,124,201710.479,2268.488,0.0112,84.22,209954.7,209954.7,pass,kml,correct,116830.351,0.4718
+ad_mall,Abu Dhabi Mall,Abu Dhabi,Commercial,150781737,52,36076.8669,836.3509,0.0232,143.09,34336.0251,34336.0251,pass,kml,correct,24115.5167,0.5196
+ajman_city_center,City Centre Ajman,Ajman,Commercial,179619234,77,65533.1707,1562.0624,0.0238,32.28,68417.3001,68417.3001,pass,kml,correct,,
+rak_mall,"Unnamed building, Khuzam",Ras Al Khaimah,Commercial,1286762330,6,933.5634,138.95,0.1488,166.15,991.5823,991.5823,pass,kml,correct,938.9484,0.6646
+dubai_ace_hardware,ACE Hardware Al Quoz,Dubai,Commercial,219193112,10,1950.3155,188.4055,0.0966,36.46,2447.7454,2447.7454,pass,kml,partial,2084.1447,0.5855
+dubai_enbd_center,Emirates NBD branch building,Dubai,Commercial,242038225,5,3261.1434,228.4298,0.07,56.82,3313.4783,3313.4783,pass,kml,correct,3589.757,0.6063
+ad_alsafeer_mall,AlSafeer Mall Mussafah,Abu Dhabi,Commercial,116691880,4,2834.4715,214.9242,0.0758,88.49,2660.6448,2660.6448,pass,kml,correct,2857.2261,0.5658
+ajman_salem_center,Salem Shopping Center,Ajman,Commercial,195817637,9,3582.7929,279.953,0.0781,75.74,3907.2192,3907.2192,pass,kml,correct,3669.6993,0.8972
+ajman_public_market,Ajman Public Market,Ajman,Commercial,195869525,11,5300.0939,356.6414,0.0673,164.87,435.8862,435.8862,pass,kml,ground_as_roof,4639.3901,0.8009
+jebel_ali_wh,"Warehouse, Jebel Ali (Inchcape Shipping)",Dubai,Industrial,317383338,10,3935.1159,295.1661,0.075,136.3,4095.1216,4095.1216,pass,kml,correct,3696.8132,0.8627
+al_serkal,Alserkal Avenue warehouse,Dubai,Industrial,494285658,8,3526.4032,253.9714,0.072,35.94,3717.4218,3717.4218,pass,kml,correct,3675.6564,0.4865
+dubai_ondemand_auto,On Demand Auto Repairs workshop,Dubai,Industrial,304663074,4,1700.8874,166.2678,0.0978,126.0,4837.54,4837.54,pass,kml,partial,4877.9117,0.3238
+dubai_tcti_warehouse,TCTI warehouse,Dubai,Industrial,175844238,14,4640.8169,306.9775,0.0661,36.01,4766.2904,4766.2904,pass,kml,correct,4749.6578,0.7333
+ad_skuline_logistics,"Sku Line workshop, Mussafah",Abu Dhabi,Industrial,117601166,6,1716.2881,294.1648,0.1714,178.0,2512.6755,2512.6755,pass,kml,partial,1606.3574,0.3616
+ad_mussafah_wh1,"Unnamed warehouse, Mussafah M-15 (1)",Abu Dhabi,Industrial,204799144,4,1904.2676,175.6188,0.0922,86.83,1895.0005,1895.0005,pass,kml,correct,1987.128,0.6512
+ad_mussafah_wh2,"Unnamed warehouse, Mussafah M-15 (2)",Abu Dhabi,Industrial,204799143,4,1821.8761,171.6601,0.0942,87.84,1877.4541,1877.4541,pass,kml,correct,1957.9407,0.5965
+ajman_empost_hub,"Emirates Post office, Al Jerf",Ajman,Industrial,195869518,6,1219.4248,136.3855,0.1118,76.38,1000.2411,1000.2411,pass,kml,courtyard_as_roof,1200.0182,0.8512
+shj_ind_logistics13,"Unnamed industrial building, Ind. Area 13",Sharjah,Industrial,210495848,7,2499.764,341.5757,0.1366,171.05,2618.4543,2618.4543,pass,kml,correct,1301.331,0.4595
+shj_ind_wh11,"Unnamed industrial building, Ind. Area 11",Sharjah,Industrial,210564157,8,1822.5335,189.2473,0.1038,32.91,1677.6912,1677.6912,pass,kml,correct,1757.2679,0.7295
+shj_ind_fab10,"Unnamed industrial building, Ind. Area 10",Sharjah,Industrial,224077287,5,1514.2731,160.821,0.1062,39.5,9384.9218,9384.9218,pass,kml,partial,7264.9671,0.1481

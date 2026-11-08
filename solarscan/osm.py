@@ -101,17 +101,27 @@ def geocode_address(address: str) -> Tuple[float, float]:
         if data:
             return float(data[0]["lat"]), float(data[0]["lon"])
     except Exception as e:
-        logging.warning(f"Geocoding query failed for '{address}': {e}")
-        
-    # Regional fallback coordinate: University of Sharjah, UAE
-    return 25.2893304, 55.4783103
+        raise ConnectionError(f"Geocoding failed for '{address}': {e}") from e
+    raise LookupError(f"Address not found: '{address}'. Pass --lat/--lon instead.")
+
+
+def _contains(polygon_coords, lat: float, lon: float) -> bool:
+    """Ray-casting point-in-polygon test in (lat, lon) space."""
+    inside = False
+    n = len(polygon_coords)
+    for i in range(n):
+        y1, x1 = polygon_coords[i]
+        y2, x2 = polygon_coords[(i + 1) % n]
+        if (y1 > lat) != (y2 > lat) and lon < (x2 - x1) * (lat - y1) / (y2 - y1) + x1:
+            inside = not inside
+    return inside
 
 
 def query_osm_building(lat: float, lon: float, search_radius_m: int = 250) -> Dict[str, Any]:
     """
     Queries OpenStreetMap Overpass API for building footprint polygons near (lat, lon).
-    Failovers across mirrors. If no building polygon is found or network fails,
-    returns a synthetic square polygon for testing/offline continuity.
+    Fails over across mirrors. Raises LookupError if no building is found and
+    ConnectionError if every mirror fails. It never invents a polygon.
     """
     if search_radius_m <= 0:
         raise ValueError(f"Search radius must be positive, got {search_radius_m}")
@@ -137,15 +147,58 @@ def query_osm_building(lat: float, lon: float, search_radius_m: int = 250) -> Di
         try:
             res = requests.post(mirror_url, data={"data": query}, headers=DEFAULT_HEADERS, timeout=8.0)
             if res.status_code != 200:
+                last_exception = RuntimeError(f"HTTP {res.status_code} from {mirror_url}")
                 continue
             
             data = res.json()
             elements = data.get("elements", [])
             nodes = {e["id"]: (e["lat"], e["lon"]) for e in elements if e.get("type") == "node"}
-            ways = [e for e in elements if e.get("type") == "way" and "nodes" in e]
-            
+            ways = {e["id"]: e for e in elements if e.get("type") == "way" and "nodes" in e}
+            relations = [e for e in elements if e.get("type") == "relation"]
+
+            inner_way_ids = set()
             valid_candidates = []
-            for way in ways:
+
+            # 1. Process OSM Relations (Multipolygon buildings with courtyards/holes)
+            for rel in relations:
+                members = rel.get("members", [])
+                rel_outer_ways = [m["ref"] for m in members if m.get("role") in ("outer", "") and m.get("type") == "way"]
+                rel_inner_ways = [m["ref"] for m in members if m.get("role") == "inner" and m.get("type") == "way"]
+
+                for i_wid in rel_inner_ways:
+                    inner_way_ids.add(i_wid)
+
+                rel_obstruction_area = 0.0
+                for i_wid in rel_inner_ways:
+                    if i_wid in ways:
+                        inner_coords = [nodes[nid] for nid in ways[i_wid]["nodes"] if nid in nodes]
+                        if len(inner_coords) >= 3:
+                            inner_meters = latlon_to_meters(inner_coords)
+                            rel_obstruction_area += calculate_shoelace_area(inner_meters)
+
+                for o_wid in rel_outer_ways:
+                    if o_wid in ways:
+                        polygon_coords = [nodes[nid] for nid in ways[o_wid]["nodes"] if nid in nodes]
+                        if len(polygon_coords) >= 3:
+                            meter_coords = latlon_to_meters(polygon_coords)
+                            area = calculate_shoelace_area(meter_coords)
+                            cent_lat = sum(p[0] for p in polygon_coords) / len(polygon_coords)
+                            cent_lon = sum(p[1] for p in polygon_coords) / len(polygon_coords)
+                            dy = (cent_lat - lat) * 111000.0
+                            dx = (cent_lon - lon) * 111000.0 * math.cos(math.radians(lat))
+                            dist_m = math.hypot(dx, dy)
+                            valid_candidates.append({
+                                "building_id": rel.get("id", o_wid),
+                                "polygon_coords": polygon_coords,
+                                "area": area,
+                                "dist_m": dist_m,
+                                "obstruction_area": round(rel_obstruction_area, 2)
+                            })
+
+            # 2. Process Standalone Ways (excluding inner courtyards of relations)
+            for wid, way in ways.items():
+                if wid in inner_way_ids:
+                    continue
                 polygon_coords = [nodes[nid] for nid in way["nodes"] if nid in nodes]
                 if len(polygon_coords) >= 3:
                     meter_coords = latlon_to_meters(polygon_coords)
@@ -163,14 +216,20 @@ def query_osm_building(lat: float, lon: float, search_radius_m: int = 250) -> Di
                         "obstruction_area": 0.0
                     })
 
+            if not valid_candidates:
+                last_exception = None  # the mirror answered: there is simply no building here
+                break
             if valid_candidates:
-                valid_candidates.sort(key=lambda c: c["dist_m"])
+                # A building that contains the query point always wins; otherwise the nearest centroid.
+                for c in valid_candidates:
+                    c["contains"] = _contains(c["polygon_coords"], lat, lon)
+                valid_candidates.sort(key=lambda c: (not c["contains"], c["dist_m"]))
                 selected = valid_candidates[0]
                 logging.info(f"OSM building polygon retrieved: ID {selected['building_id']}, dist: {selected['dist_m']:.1f}m")
                 return {
                     "building_id": selected["building_id"],
                     "polygon_coords": selected["polygon_coords"],
-                    "obstruction_area": 0.0,
+                    "obstruction_area": selected.get("obstruction_area", 0.0),
                     "query_lat": lat,
                     "query_lon": lon
                 }
@@ -178,21 +237,6 @@ def query_osm_building(lat: float, lon: float, search_radius_m: int = 250) -> Di
             last_exception = e
             logging.warning(f"Mirror {mirror_url} failed: {e}")
 
-    logging.error(f"Overpass mirrors failed: {last_exception}. Using synthetic fallback.")
-    
-    # Fallback bounding box for offline continuity
-    lat_delta = 0.00015
-    lon_delta = 0.00015
-    synthetic_polygon = [
-        (lat - lat_delta, lon - lon_delta),
-        (lat - lat_delta, lon + lon_delta),
-        (lat + lat_delta, lon + lon_delta),
-        (lat + lat_delta, lon - lon_delta),
-    ]
-    return {
-        "building_id": "synthetic_fallback",
-        "polygon_coords": synthetic_polygon,
-        "obstruction_area": 0.0,
-        "query_lat": lat,
-        "query_lon": lon
-    }
+    if last_exception is None:
+        raise LookupError(f"No OSM building found within {search_radius_m} m of ({lat}, {lon}).")
+    raise ConnectionError(f"All Overpass mirrors failed: {last_exception}")

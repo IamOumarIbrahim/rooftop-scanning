@@ -61,8 +61,8 @@ def test_generate_html_report_escaping(tmp_path):
     # Ensure XSS injection was escaped
     assert "<script>" not in content
     assert "&lt;script&gt;" in content
-    assert "Avoided Carbon Emissions" in content
-    assert "Specific Annual Yield" in content
+    assert "System assumed" in content and "Limits" in content and "crystalline Si" in content
+    assert "OpenStreetMap contributors" in content  # ODbL attribution is required
 
 
 def test_generate_pdf_report(tmp_path):
@@ -73,3 +73,17 @@ def test_generate_pdf_report(tmp_path):
     # Ensure no leftover temporary PNGs
     temp_files = [f for f in os.listdir(tmp_path) if f.endswith(".png")]
     assert len(temp_files) == 0
+
+
+def test_report_content_payback_grid_is_centered_and_closed_form():
+    from solarscan.report import build_report_content
+    d = dict(SAMPLE_REPORT_DATA, cost_per_kw=3000.0, rate_aed=0.38, n_modules=225)
+    c = build_report_content(d)
+    sy = d["annual_kwh"] / d["dc_capacity_kw"]
+    i, j = c["base"]
+    assert c["costs"][i] == 3000.0 and c["tariffs"][j] == 0.38
+    assert abs(c["grid"][i][j] - 3000.0 / (sy * 0.38)) < 1e-3  # yield is rounded to 0.01 kWh/kWp
+    assert c["grid"][0][-1] < c["grid"][i][j] < c["grid"][-1][0]  # cheaper + pricier power -> shorter payback
+    assert any("OpenStreetMap" in b for _, b in c["limits"])
+    # the roof-use bar adds up to the footprint area
+    assert abs(sum(a for _, a, _ in c["roof_use"]) - d["raw_area"]) < 1e-6

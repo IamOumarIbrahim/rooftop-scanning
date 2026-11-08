@@ -1,23 +1,25 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "solarscan"
-version = "0.2.0"
-description = "Automated Rooftop Solar Pre-Feasibility Assessment from OpenStreetMap Building Footprints"
+version = "1.0.0"
+description = "Rooftop solar pre-feasibility screening from OpenStreetMap building footprints"
 readme = "README.md"
 authors = [
     { name = "Oumar Mamoun Ibrahim", email = "U22200741@sharjah.ac.ae" },
-    { name = "Mohamad Khairi bin Ishak", email = "mishak@sharjah.ac.ae" }
+    { name = "Mohamad Khairi bin Ishak", email = "mishak@sharjah.ac.ae" },
+    { name = "Mir Umer Jarwar", email = "U20105400@sharjah.ac.ae" }
 ]
 license = "MIT"
-requires-python = ">=3.9"
-keywords = ["solar", "photovoltaic", "openstreetmap", "pre-feasibility", "gis", "energy-modeling"]
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+keywords = ["solar", "photovoltaic", "openstreetmap", "pre-feasibility", "gis", "pvgis"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: GIS"
 ]
 dependencies = [
@@ -25,8 +27,12 @@ dependencies = [
     "pyyaml",
     "matplotlib",
     "reportlab",
-    "shapely"
+    "shapely>=2.0",
+    "pyproj>=3.4"
 ]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pvlib>=0.10", "pandas", "pypdf", "playwright"]
 
 [project.urls]
 "Homepage" = "https://github.com/IamOumarIbrahim/rooftop-scanning"
@@ -35,8 +41,14 @@ dependencies = [
 [project.scripts]
 solarscan = "solarscan.cli:main"
 
+[project.gui-scripts]
+solarscan-gui = "solarscan.gui:main"
+
 [tool.setuptools]
 packages = ["solarscan"]
+
+[tool.setuptools.package-data]
+solarscan = ["data/pvgis/*.json", "data/*.json"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

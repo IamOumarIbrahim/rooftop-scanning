@@ -1,21 +1,39 @@
-docs/internal
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
-.pytest_cache/
 *.egg-info/
+.pytest_cache/
+.coverage
 build/
 dist/
-*.synctex.gz
-*.aux
-*.log
-*.out
-*.toc
-*.fls
-*.fdb_latexmk
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+
+# LaTeX build files (main.pdf is committed)
 manuscript/*.aux
 manuscript/*.log
 manuscript/*.out
 manuscript/*.bbl
 manuscript/*.blg
-reports/gate_check_demo/
+manuscript/*.fls
+manuscript/*.fdb_latexmk
+manuscript/*.synctex.gz
+manuscript/*.toc
+
+# Downloads and generated helpers (recreated by scripts)
+data/_cache/
+data/reference_traces/_to_trace/
+data/reference_traces/_review/
+reports/
+
+# Private notes
+docs/internal
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

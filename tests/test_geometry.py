@@ -5,6 +5,7 @@ Unit tests for solarscan.geometry module.
 import pytest
 import math
 from solarscan.geometry import (
+    calculate_building_axis,
     calculate_shoelace_area,
     calculate_perimeter,
     calculate_usable_area,
@@ -55,14 +56,42 @@ def test_usable_area_non_negative():
     assert usable == 0.0
 
 
-def test_dominant_azimuth():
-    """
-    Verifies dominant azimuth:
-    Longest edge along X axis (East-West) -> dy=0, dx=30 -> 90 degrees (East).
-    """
-    vertices = [(0.0, 0.0), (30.0, 0.0), (30.0, 10.0), (0.0, 10.0)]
-    azimuth = calculate_dominant_azimuth(vertices)
-    assert math.isclose(azimuth, 90.0, abs_tol=1.0)
+def test_building_axis_and_array_azimuth():
+    """A 30 m x 10 m box with its long side East-West has axis 90 deg; rows then face South."""
+    box = [(0.0, 0.0), (30.0, 0.0), (30.0, 10.0), (0.0, 10.0)]
+    assert math.isclose(calculate_building_axis(box), 90.0, abs_tol=0.5)
+    assert math.isclose(calculate_dominant_azimuth(box), 180.0, abs_tol=0.5)
+
+
+def test_azimuth_does_not_depend_on_vertex_order():
+    """The old code returned 303.78 or 123.78 deg for the same W5 roof depending on vertex order."""
+    import json, os
+    path = os.path.join(os.path.dirname(__file__), "..", "data", "fixtures", "uos_w5.json")
+    m = latlon_to_meters(json.load(open(path))["polygon_coords"])
+    assert calculate_building_axis(m) == calculate_building_axis(m[::-1])
+    assert calculate_dominant_azimuth(m) == calculate_dominant_azimuth(m[::-1])
+    assert abs(calculate_dominant_azimuth(m) - 180.0) <= 45.0
+
+
+def test_rotated_box_axis():
+    """Rotate the box by 30 deg clockwise: axis 120 deg (mod 180), rows face 210 deg."""
+    a = math.radians(30)
+    box = [(0.0, 0.0), (30.0, 0.0), (30.0, 10.0), (0.0, 10.0)]
+    rot = [(x * math.cos(a) + y * math.sin(a), -x * math.sin(a) + y * math.cos(a)) for x, y in box]
+    assert math.isclose(calculate_building_axis(rot), 120.0, abs_tol=0.5)
+    assert math.isclose(calculate_dominant_azimuth(rot), 210.0, abs_tol=0.5)
+
+
+def test_projection_matches_geodesic_area():
+    """Local ellipsoidal projection agrees with pyproj geodesic area to < 0.01 %."""
+    pyproj = pytest.importorskip("pyproj")
+    import json, os, glob
+    g = pyproj.Geod(ellps="WGS84")
+    for f in glob.glob(os.path.join(os.path.dirname(__file__), "..", "data", "fixtures", "*.json")):
+        c = json.load(open(f))["polygon_coords"]
+        ref = abs(g.polygon_area_perimeter([p[1] for p in c], [p[0] for p in c])[0])
+        if ref > 0:
+            assert abs(calculate_shoelace_area(latlon_to_meters(c)) - ref) / ref < 1e-4
 
 
 def test_latlon_to_meters():
@@ -124,4 +153,27 @@ def test_bounding_box_and_aspect_ratio():
 def test_usable_area_negative_setback():
     usable = calculate_usable_area(100.0, 40.0, -1.5, -5.0)
     assert math.isclose(usable, 100.0, abs_tol=1e-5)
+
+
+def test_buffered_usable_area_with_holes():
+    """Verifies that interior holes/courtyards reduce buffered usable area."""
+    outer = [(0.0, 0.0), (40.0, 0.0), (40.0, 30.0), (0.0, 30.0)]
+    inner_hole = [(10.0, 10.0), (20.0, 10.0), (20.0, 20.0), (10.0, 20.0)]
+    without_hole = calculate_usable_area_buffered(outer, setback_m=1.0)
+    with_hole = calculate_usable_area_buffered(outer, setback_m=1.0, holes=[inner_hole])
+    # Total outer buffered: (40-2)*(30-2) = 38*28 = 1064 m2
+    # Inner hole expands outward by 1m: (10+2)*(10+2) = 144 m2
+    # Net with hole should be approx 1064 - 144 = 920 m2
+    assert with_hole < without_hole
+    assert 850.0 <= with_hole <= 950.0
+
+
+def test_shoelace_non_finite_raises():
+    """Verifies that calculate_shoelace_area and calculate_perimeter reject NaN coordinates."""
+    bad_coords = [(0.0, 0.0), (float('nan'), 1.0), (1.0, 1.0)]
+    with pytest.raises(ValueError, match="Non-finite coordinate"):
+        calculate_shoelace_area(bad_coords)
+    with pytest.raises(ValueError, match="Non-finite coordinate"):
+        calculate_perimeter(bad_coords)
+
 

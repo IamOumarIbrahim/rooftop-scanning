@@ -1,0 +1,25 @@
+id,name,district,emirate,category,osm_way_id
+uos_w5,University Building W5 (Computer Science),University City,Sharjah,Academic,204709053
+uos_m4,University Building M4,University City,Sharjah,Academic,204692741
+uos_m11,University Building M11,University City,Sharjah,Academic,204702512
+uos_m13,University annex building,College of Engineering M13,Sharjah,Academic,204961534
+moe_dubai,Unnamed building at Mall of the Emirates site,Sheikh Zayed Rd,Dubai,Commercial,1136937509
+ad_mall,Abu Dhabi Mall,Al Zahiya Tourist Club Area,Abu Dhabi,Commercial,150781737
+ajman_city_center,City Centre Ajman,Al Jerf 2,Ajman,Commercial,179619234
+rak_mall,"Unnamed building, Khuzam",Khuzam Rd,Ras Al Khaimah,Commercial,1286762330
+dubai_ace_hardware,ACE Hardware Al Quoz,Sheikh Zayed Rd,Dubai,Commercial,219193112
+dubai_enbd_center,Emirates NBD branch building,Al Barsha 1 / Al Quoz,Dubai,Commercial,242038225
+ad_alsafeer_mall,AlSafeer Mall Mussafah,Mussafah Industrial Area M-9,Abu Dhabi,Commercial,116691880
+ajman_salem_center,Salem Shopping Center,Industrial Area 1,Ajman,Commercial,195817637
+ajman_public_market,Ajman Public Market,Al Jerf Industrial Area 1,Ajman,Commercial,195869525
+jebel_ali_wh,"Warehouse, Jebel Ali (Inchcape Shipping)",Jebel Ali Freezone South,Dubai,Industrial,317383338
+al_serkal,Alserkal Avenue warehouse,17th St,Dubai,Industrial,494285658
+dubai_ondemand_auto,On Demand Auto Repairs workshop,Al Quoz Industrial Area 3,Dubai,Industrial,304663074
+dubai_tcti_warehouse,TCTI warehouse,Al Quoz Industrial Area 2,Dubai,Industrial,175844238
+ad_skuline_logistics,"Sku Line workshop, Mussafah",Mussafah Industrial Area M-14,Abu Dhabi,Industrial,117601166
+ad_mussafah_wh1,"Unnamed warehouse, Mussafah M-15 (1)",Mussafah Industrial Sector M-15,Abu Dhabi,Industrial,204799144
+ad_mussafah_wh2,"Unnamed warehouse, Mussafah M-15 (2)",Mussafah Industrial Sector M-15,Abu Dhabi,Industrial,204799143
+ajman_empost_hub,"Emirates Post office, Al Jerf",Al Jerf Industrial Area 1,Ajman,Industrial,195869518
+shj_ind_logistics13,"Unnamed industrial building, Ind. Area 13",Industrial Area 13,Sharjah,Industrial,210495848
+shj_ind_wh11,"Unnamed industrial building, Ind. Area 11",Industrial Area 11,Sharjah,Industrial,210564157
+shj_ind_fab10,"Unnamed industrial building, Ind. Area 10",Industrial Area 10,Sharjah,Industrial,224077287

@@ -3,21 +3,21 @@ Command line interface (CLI) for SolarScan rooftop pre-feasibility framework.
 """
 
 import argparse
+import re
 import os
 import sys
-import yaml
 import csv
-import re
 from typing import Dict, Any, Optional
 
 from solarscan.osm import geocode_address, query_osm_building
 from solarscan.fixtures import load_fixture
 from solarscan.geometry import (
     latlon_to_meters, calculate_shoelace_area, calculate_perimeter,
-    calculate_usable_area, calculate_dominant_azimuth
+    calculate_usable_area_buffered, calculate_building_axis, array_azimuth_aligned, usable_polygon
 )
-from solarscan.sizing import calculate_dc_capacity, recommend_inverter_capacity
-from solarscan.yield_estimate import estimate_annual_yield, estimate_simple_payback
+from solarscan.layout import layout_modules
+from solarscan.sizing import recommend_inverter_capacity
+from solarscan.yield_estimate import estimate_annual_yield, estimate_simple_payback, nearest_site
 from solarscan.report import generate_pdf_report, generate_html_report
 from solarscan.config import load_config, get_emirate_profile
 
@@ -34,19 +34,23 @@ def run_scan(
     config_path: str = "solarscan.yaml",
     fixture_path: Optional[str] = None,
     fmt: str = "pdf",
-    emirate: Optional[str] = None
-) -> str:
-    """Executes end-to-end solar pre-feasibility screening."""
+    emirate: Optional[str] = None,
+    cost_per_kw: Optional[float] = None,
+    return_data: bool = False,
+):
+    """Executes end-to-end solar pre-feasibility screening.
+
+    Returns the report path, or with return_data=True the full result dict (with 'pdf'/'html' paths)."""
     cfg = load_config(config_path, emirate=emirate)
     
     tilt_deg = tilt if tilt is not None else cfg.get("default_tilt_deg", 15.0)
     setback_m = setback if setback is not None else cfg.get("setback_m", 1.5)
     eff = module_eff if module_eff is not None else cfg.get("module_efficiency", 0.20)
     dc_ac_ratio = cfg.get("dc_ac_ratio", 1.2)
-    psh = cfg.get("peak_sun_hours_per_day", 5.5)
-    sys_loss = cfg.get("system_loss_factor", 0.85)
+    packing = cfg.get("packing_factor", 0.70)
+    layout = cfg.get("array_layout", "south")
     tariff = rate_aed if rate_aed is not None else cfg.get("rate_aed", 0.38)
-    cost_per_kw = cfg.get("cost_per_kw", 1000.0)
+    cost_per_kw = cost_per_kw if cost_per_kw is not None else cfg.get("cost_per_kw", 3000.0)
 
     if not address or not address.strip():
         raise ValueError("Address or location query string cannot be empty.")
@@ -77,19 +81,22 @@ def run_scan(
     meter_coords = latlon_to_meters(polygon_coords)
     raw_area = calculate_shoelace_area(meter_coords)
     perimeter = calculate_perimeter(meter_coords)
-    usable_area = calculate_usable_area(raw_area, perimeter, setback_m, obstruction_area)
-    
-    azimuth_deg = calculate_dominant_azimuth(meter_coords)
-    dc_capacity_kw = calculate_dc_capacity(usable_area, eff)
+    usable_area = calculate_usable_area_buffered(meter_coords, setback_m, obstruction_area)
+
+    building_axis_deg = calculate_building_axis(meter_coords)
+    azimuth_deg = 180.0 if layout == "south" else array_azimuth_aligned(building_axis_deg)
+    site = cfg["pvgis_site"] if emirate else nearest_site(lat, lon)
+    # Size the system from the modules that actually fit in tilted rows (GCR = packing factor).
+    w_m, l_m = cfg.get("module_width_m", 1.0), cfg.get("module_length_m", 2.0)
+    usable_poly = usable_polygon(meter_coords, setback_m)
+    rows = layout_modules(usable_poly, w_m, l_m, tilt_deg, packing, azimuth_deg)
+    module_kw = eff * w_m * l_m  # kWp per module at 1 kW/m^2
+    dc_capacity_kw = round(rows["n"] * module_kw, 3)
+    if obstruction_area > 0:  # known inner courtyards/holes reduce the array in proportion
+        dc_capacity_kw = round(dc_capacity_kw * max(0.0, 1 - obstruction_area / max(usable_area, 1e-9)), 3)
     ac_capacity_kw = recommend_inverter_capacity(dc_capacity_kw, dc_ac_ratio)
-    
-    annual_kwh = estimate_annual_yield(
-        dc_capacity_kw,
-        tilt_deg=tilt_deg,
-        azimuth_deg=azimuth_deg,
-        peak_sun_hours_per_day=psh,
-        system_loss_factor=sys_loss
-    )
+
+    annual_kwh = estimate_annual_yield(dc_capacity_kw, tilt_deg=tilt_deg, azimuth_deg=azimuth_deg, site=site)
     payback_years = estimate_simple_payback(
         annual_kwh,
         tariff,
@@ -97,7 +104,7 @@ def run_scan(
         dc_capacity_kw=dc_capacity_kw
     )
 
-    safe_name = "".join(c if c.isalnum() else "_" for c in address)[:30].strip('_')
+    safe_name = re.sub(r"[^0-9A-Za-z]+", "_", address).strip("_")[:40].rstrip("_")
     if not safe_name:
         safe_name = f"scan_{lat:.4f}_{lon:.4f}"
 
@@ -118,10 +125,33 @@ def run_scan(
         "dc_capacity_kw": dc_capacity_kw,
         "ac_capacity_kw": ac_capacity_kw,
         "azimuth_deg": azimuth_deg,
+        "building_axis_deg": building_axis_deg,
+        "array_layout": layout,
+        "pvgis_site": site,
+        "packing_factor": packing,
+        "n_modules": rows["n"],
+        "modules": rows["modules"],
+        "usable_rings": [list(g.exterior.coords) for g in (getattr(usable_poly, "geoms", None) or [usable_poly])
+                         if not g.is_empty],
+        "module_w": module_kw * 1000,
+        "module_width_m": w_m,
+        "module_length_m": l_m,
+        "row_pitch_m": rows.get("pitch_m"),
+        "dc_ac_ratio": dc_ac_ratio,
+        "osm_way_id": osm_data.get("building_id"),
+        "cost_per_kw": cost_per_kw,
+        "discount_rate": cfg.get("discount_rate", 0.05),
+        "lifetime_years": cfg.get("lifetime_years", 25),
+        "annual_degradation": cfg.get("annual_degradation", 0.005),
+        "om_cost_fraction": cfg.get("om_cost_fraction", 0.015),
+        "version": __import__("solarscan").__version__,
         "tilt_deg": tilt_deg,
         "annual_kwh": annual_kwh,
         "rate_aed": tariff,
-        "payback_years": payback_years
+        "payback_years": payback_years,
+        "emirate": cfg.get("emirate"),
+        "utility": cfg.get("utility"),
+        "grid_co2_kg_per_kwh": cfg.get("grid_co2_kg_per_kwh", 0.42)
     }
 
     if fmt in ("pdf", "both"):
@@ -137,7 +167,78 @@ def run_scan(
         print(f"  - PDF Report: {out_pdf}")
     if fmt in ("html", "both"):
         print(f"  - HTML Report: {out_html}")
+    if return_data:
+        report_data["pdf"] = out_pdf if fmt in ("pdf", "both") else None
+        report_data["html"] = out_html if fmt in ("html", "both") else None
+        return report_data
     return out_html if fmt == "html" else out_pdf
+
+
+def run_batch_scan(
+    csv_file: str,
+    out_dir: str = "reports",
+    config_path: str = "solarscan.yaml",
+    fmt: str = "pdf"
+) -> list:
+    """
+    Executes batch pre-feasibility scans from a CSV file.
+    Handles per-row errors defensively without terminating batch progress.
+    """
+    if not os.path.exists(csv_file):
+        raise FileNotFoundError(f"Batch CSV '{csv_file}' not found.")
+
+    generated_reports = []
+    with open(csv_file, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows = [r for r in reader if r.get("address") and r["address"].strip()]
+
+    for idx, r in enumerate(rows, 1):
+        addr = r["address"].strip()
+        lat_raw = r.get("lat")
+        lon_raw = r.get("lon")
+        emirate = r.get("emirate", "").strip() or None
+        fixture = r.get("fixture", "").strip() or None
+
+        lat = None
+        lon = None
+        if lat_raw and lon_raw:
+            try:
+                lat = float(lat_raw.strip())
+                lon = float(lon_raw.strip())
+            except ValueError:
+                print(f"Warning: Skipping invalid coordinates for '{addr}': lat={lat_raw}, lon={lon_raw}")
+                lat, lon = None, None
+
+        print(f"[{idx}/{len(rows)}] Processing {addr}...")
+        try:
+            out_file = run_scan(
+                address=addr,
+                lat=lat,
+                lon=lon,
+                out_dir=out_dir,
+                config_path=config_path,
+                fixture_path=fixture,
+                fmt=fmt,
+                emirate=emirate
+            )
+            generated_reports.append(out_file)
+        except Exception as e:
+            print(f"Warning: Failed processing '{addr}': {e}")
+
+    return generated_reports
+
+
+# Offline demo: a warehouse in Dubai (OSM way 175844238), shipped with the package
+DEMO_CASE = dict(address="TCTI warehouse, Al Quoz Industrial Area 2, Dubai", lat=25.14659, lon=55.23921,
+                 emirate="dubai", fixture=os.path.join(os.path.dirname(os.path.abspath(__file__)), "data",
+                                                       "demo_tcti.json"))
+
+
+def demo_kwargs():
+    """run_scan arguments for the offline demo building."""
+    c = DEMO_CASE
+    return dict(address=c["address"], lat=c["lat"], lon=c["lon"], emirate=c["emirate"],
+                fixture_path=c["fixture"] if os.path.exists(c["fixture"]) else None)
 
 
 def main():
@@ -149,14 +250,18 @@ def main():
     scan_parser.add_argument("--lat", type=float, default=None, help="Latitude override")
     scan_parser.add_argument("--lon", type=float, default=None, help="Longitude override")
     scan_parser.add_argument("--tilt", type=float, default=None, help="Tilt angle (deg)")
-    scan_parser.add_argument("--rate-aed", type=float, default=0.38, help="Tariff rate (AED/kWh)")
+    scan_parser.add_argument("--rate-aed", type=float, default=None, help="Tariff rate (AED/kWh)")
+    scan_parser.add_argument("--cost", type=float, default=None, help="Installed cost (AED/kWp)")
     scan_parser.add_argument("--module-efficiency", type=float, default=None, help="Module efficiency")
     scan_parser.add_argument("--setback", type=float, default=None, help="Setback distance (m)")
     scan_parser.add_argument("--out", type=str, default="reports", help="Output directory")
     scan_parser.add_argument("--config", type=str, default="solarscan.yaml", help="Config YAML file")
     scan_parser.add_argument("--fixture", type=str, default=None, help="Path to offline JSON fixture")
     scan_parser.add_argument("--format", choices=["pdf", "html", "both"], default="pdf", help="Report format")
-    scan_parser.add_argument("--emirate", type=str, default=None, choices=["sharjah", "dubai", "abu_dhabi", "ajman", "ras_al_khaimah"], help="Regional UAE utility profile")
+    scan_parser.add_argument("--emirate", type=str, default=None, choices=["sharjah", "dubai", "abu_dhabi", "ajman", "ras_al_khaimah", "fujairah", "umm_al_quwain"], help="Regional UAE utility profile")
+
+    gui_parser = subparsers.add_parser("gui", help="Open the graphical interface")
+    gui_parser.add_argument("--screenshot", type=str, default=None, help=argparse.SUPPRESS)
 
     demo_parser = subparsers.add_parser("demo", help="Run offline reference case study")
     demo_parser.add_argument("--format", choices=["pdf", "html", "both"], default="pdf", help="Report format")
@@ -182,34 +287,25 @@ def main():
             config_path=args.config,
             fixture_path=args.fixture,
             fmt=args.format,
-            emirate=args.emirate
+            emirate=args.emirate,
+            cost_per_kw=args.cost
         )
+    elif args.command == "gui":
+        from solarscan.gui import main as gui_main
+        gui_main(screenshot=args.screenshot)
     elif args.command == "demo":
-        fixture = "data/fixtures/uos_w5.json"
-        if not os.path.exists(fixture):
-            fixture = None
-        run_scan(
-            address="Computer Science Department W5 Sharjah",
-            fixture_path=fixture,
-            lat=25.2893304,
-            lon=55.4783103,
-            tilt=15.0,
-            rate_aed=0.38,
-            out_dir="reports/demo",
-            fmt=args.format
-        )
+        run_scan(**demo_kwargs(), out_dir="reports/demo", fmt=args.format)
     elif args.command == "batch":
-        if not os.path.exists(args.csv_file):
-            print(f"Error: CSV '{args.csv_file}' not found.")
+        try:
+            run_batch_scan(
+                csv_file=args.csv_file,
+                out_dir=args.out,
+                config_path=args.config,
+                fmt=args.format
+            )
+        except Exception as e:
+            print(f"Error: {e}")
             sys.exit(1)
-        with open(args.csv_file, 'r', encoding='utf-8') as f:
-            rows = [r for r in csv.DictReader(f) if r.get("address")]
-            for idx, r in enumerate(rows, 1):
-                addr = r["address"]
-                lat = float(r["lat"]) if r.get("lat") and r["lat"].strip() else None
-                lon = float(r["lon"]) if r.get("lon") and r["lon"].strip() else None
-                print(f"[{idx}/{len(rows)}] Processing {addr}...")
-                run_scan(address=addr, lat=lat, lon=lon, out_dir=args.out, config_path=args.config, fmt=args.format)
     else:
         parser.print_help()
 

@@ -1,382 +1,293 @@
 \documentclass[conference]{IEEEtran}
-% \IEEEoverridecommandlockouts % Unneeded: no funding or grant footnote.
-
 
 \usepackage{cite}
-\usepackage{amsmath,amssymb,amsfonts}
-\usepackage{algorithmic}
+\usepackage{amsmath,amssymb}
 \usepackage{graphicx}
-\usepackage{textcomp}
-\usepackage{xcolor}
+\usepackage[table]{xcolor}
 \usepackage{booktabs}
-\usepackage{siunitx}
 \usepackage{url}
 \usepackage{microtype}
 \usepackage{balance}
 
 \graphicspath{{figures/}}
-
-\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
-    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\input{generated/numbers.tex}   % every result below comes from experiments/analysis.py
 
 \begin{document}
 
-\title{Automated Rooftop Solar Pre-Feasibility Assessment from OpenStreetMap Building Footprints}
+\title{Rooftop Solar Screening from\\OpenStreetMap Building Footprints}
 
 \author{
-\IEEEauthorblockN{1\textsuperscript{st} Oumar Mamoun Ibrahim}
-\IEEEauthorblockA{\textit{Department of Computer Engineering} \\
+\IEEEauthorblockN{Oumar Mamoun Ibrahim}
+\IEEEauthorblockA{\textit{Department of Computer Engineering}\\
 \textit{University of Sharjah}\\
-Sharjah, UAE \\
+Sharjah, United Arab Emirates\\
 U22200741@sharjah.ac.ae}
 \and
-\IEEEauthorblockN{2\textsuperscript{nd} Mohamad Khairi bin Ishak}
-\IEEEauthorblockA{\textit{Department of Computer Engineering} \\
+\IEEEauthorblockN{Mohamad Khairi bin Ishak}
+\IEEEauthorblockA{\textit{Department of Computer Engineering}\\
 \textit{University of Sharjah}\\
-Sharjah, UAE \\
+Sharjah, United Arab Emirates\\
 mishak@sharjah.ac.ae}
+\and
+\IEEEauthorblockN{Mir Umer Jarwar}
+\IEEEauthorblockA{\textit{Department of Computer Engineering}\\
+\textit{University of Sharjah}\\
+Sharjah, United Arab Emirates\\
+U20105400@sharjah.ac.ae}
 }
 
 \maketitle
 
 \begin{abstract}
-Rooftop solar photovoltaic (PV) adoption often stalls at the point of first decision, when a business or property owner needs a fast, low-cost feasibility estimate before committing to an engineering study. Existing pre-feasibility methods, including manual satellite-image tracing, light detection and ranging (LiDAR) platforms, and paid application programming interfaces (APIs), are costly, proprietary, or unavailable across much of the United Arab Emirates, the Gulf, and the Global South. Unlike LiDAR platforms such as Google's Project Sunroof, which have little coverage in these regions, this work uses only free, crowdsourced OpenStreetMap (OSM) building-footprint data. This paper presents an open-source Python framework that generates automated rooftop solar feasibility reports from OSM data. Given an address or coordinate, the framework queries the OSM Overpass API for the building polygon, projects it into a local metric frame, and computes footprint area with the shoelace formula. It estimates roof azimuth, applies an irradiance derating factor, and models estimated annual energy yield. Across an empirical validation dataset of 24 diverse buildings in the United Arab Emirates spanning academic, commercial, and industrial typologies, the automated footprint extraction achieves a Mean Absolute Percentage Error (MAPE) of 4.54\% and a coefficient of determination ($R^2$) of 1.000 compared to independent high-resolution satellite measurements. A detailed case study of an academic facility at the University of Sharjah yields an estimated 272.38~kW direct current (DC) array capacity, 260.33~MWh annual generation, and an estimated simple payback period of 2.75 years. Parametric sensitivity analyses demonstrate the scale dependency of perimeter setback buffers and define the operational boundaries where crowdsourced screening is suitable for preliminary decision support.
-
+Before paying for a solar design study, a building owner needs a quick first answer: how much solar power fits on the roof, and does it pay back? In the United Arab Emirates, most automated tools cannot give this answer, because roof laser scans and 3D city models are not public. We present SolarScan, an open-source tool that uses free data only. It takes an address, finds the building outline in OpenStreetMap, lays out the solar modules on the roof, and estimates the yearly energy and the payback time. To test it, we traced the roofs of \NBuildings{} buildings in \NEmirates{} emirates by hand. When the map outline matched the building (\NOsmOk{} of \NManual), the roof area was within \OkMape\% of the trace on average. The other \NOsmBad{} outlines were wrong: part of the building was missing, open ground or a courtyard was counted as roof, or the roof had several levels. For a university building, the tool estimates \CasePdc~kWp, \CaseEnergy~MWh per year and a payback of \CasePayback{} years. Cost and electricity price change the payback most; the panel direction changes it by only \CaseAlLoss\%.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Building footprint, geographic information systems, open-source software, OpenStreetMap, photovoltaic pre-feasibility, rooftop solar, solar resource assessment.
+building footprint, open-source software, OpenStreetMap, photovoltaic systems, PVGIS, rooftop solar
 \end{IEEEkeywords}
 
+% ======================================================================
 \section{Introduction}
 
-Distributed rooftop solar photovoltaic (PV) systems provide clean on-site electricity, reduce transmission losses, and lower carbon emissions in rapid-growth urban environments. In regions with exceptional solar irradiance, such as the United Arab Emirates (UAE) and the wider Gulf Cooperation Council (GCC), annual global horizontal irradiance (GHI) frequently exceeds 2,000~kWh/m$^2$/year \cite{alhammami2021, hamdi2024}. This resource provides favorable economic fundamentals for commercial, institutional, and residential rooftop generation.
+Rooftop photovoltaic (PV) systems suit the United Arab Emirates (UAE) well: at the University of Sharjah, each square meter of flat ground receives about \Ghi~kWh of sunlight per year. Yet many projects stop at the first question: \emph{is this roof worth a closer look?} To answer it, an installer usually visits the site. This takes time and money, and an owner of many buildings, such as a school group or a logistics company, needs the answer for all of them at once.
 
-Despite strong technical potential, widespread rooftop solar adoption encounters friction at the initial screening phase. A commercial property owner, facility manager, or residential consumer contemplating solar installation must evaluate technical capacity and financial return before committing capital. However, preliminary engineering site visits conducted by engineering, procurement, and construction (EPC) contractors require physical roof inspections, drone photography, and manual computer-aided drafting (CAD) modeling. These initial surveys cost between \$1,000 and \$5,000 and require multiple weeks to deliver \cite{gassar2021, melius2013}. Consequently, a substantial majority of prospective adopters abandon solar inquiries at this point of first decision.
+Automated tools exist, but they need data that the UAE does not have. Large studies use airborne light detection and ranging (LiDAR) or 3D city models \cite{walch2020, gagnon2018}. Others use land-registry data with machine learning \cite{assouline2018}. Commercial services use licensed images and charge per request. None of these gives a free first answer in the Gulf, although rooftop PV can be economically viable in the UAE \cite{griffiths2016, alhammami2021}.
 
-Commercial software platforms have sought to address this barrier by automating preliminary assessments. Tools such as Google Project Sunroof \cite{gagnon2016} and commercial high-resolution satellite APIs provide instant solar screening. However, these platforms rely on airborne light detection and ranging (LiDAR) and sub-meter aerial photogrammetry. Because airborne LiDAR campaigns require public funding and municipal flight permits, coverage remains concentrated almost exclusively in North America and select Western European countries \cite{rees2025, walch2020}. Across the UAE, the GCC, and most of the Global South, commercial platforms offer zero coverage. Furthermore, commercial solar APIs require ongoing paid subscriptions, software licenses, and cloud connectivity, preventing local deployment by researchers, municipal planners, and small enterprises.
+OpenStreetMap (OSM) is a free world map made by volunteers. It contains building outlines \cite{haklay2008}, but their quality varies from place to place \cite{hecht2013, fan2014, brovelli2018, biljecki2023}. The Photovoltaic Geographical Information System (PVGIS) of the European Commission gives free solar energy estimates for any point in Europe, Africa and the Middle East \cite{huld2012}. Together, the two sources give a roof and the energy it can produce.
 
-Crowdsourced geospatial data from OpenStreetMap (OSM) provide an alternative foundation for urban spatial modeling \cite{haklay2008}. OpenStreetMap contains millions of volunteer-digitized building footprint polygons worldwide, accessible without licensing fees through public web application programming interfaces (APIs) such as the Overpass API. While previous studies have examined regional building morphologies using OSM \cite{biljecki2020, hecht2013}, existing research either focuses on macro-scale national aggregates in Europe \cite{mainzer2017, assouline2017}, depends on external commercial geographic information system (GIS) software \cite{rees2025}, or models electrical physics without automated geometric extraction \cite{holmgren2018}. Prior literature lacks a lightweight, self-contained, open-source computational pipeline that converts raw street addresses or geographical coordinates directly into verifiable rooftop solar feasibility estimates in a coverage-gap region.
-
-This paper addresses this barrier by making the following specific research contributions:
-\begin{enumerate}
-    \item \textbf{End-to-End Open Framework:} We implement and document a self-contained Python framework (SolarScan) that executes the complete pre-feasibility workflow: coordinate geocoding, OSM Overpass polygon retrieval, local metric projection, shoelace area computation, perimeter setback buffering, dominant roof azimuth extraction, empirical irradiance derating, system sizing, life-cycle techno-economics, and greenhouse gas carbon offset estimation. The framework operates without commercial GIS licenses, GPU hardware, or paid API keys.
-    \item \textbf{Empirical Multi-Building Validation in a Coverage-Gap Region:} We assemble an empirical benchmark of 24 buildings across five UAE Emirates (Sharjah, Dubai, Abu Dhabi, Ajman, and Ras Al Khaimah), evaluating automated OSM extraction against independent sub-meter satellite measurements across academic, commercial, and industrial typologies. We quantify geometric fidelity using Mean Absolute Percentage Error (MAPE), Mean Bias Error (MBE), Root Mean Square Error (RMSE), and correlation coefficients.
-    \item \textbf{Sensitivity and Boundary Analysis:} We perform parametric sensitivity analyses on perimeter setback distances and roof orientations, proving analytically that perimeter-based setbacks exhibit strong scale dependency governed by the building's perimeter-to-area ($P/A$) ratio. We define explicit boundaries for when crowdsourced footprint screening is reliable for first-decision feasibility and when detailed engineering design is required.
-\end{enumerate}
-
-\section{Related Work and Gap Analysis}
-
-\subsection{Systematic Literature Search}
-
-We conducted a structured literature review across IEEE Xplore, ScienceDirect, ACM Digital Library, and Google Scholar using combinations of terms including ``rooftop solar pre-feasibility'', ``OpenStreetMap building footprint'', ``LiDAR solar potential'', and ``urban PV screening''. Table~\ref{tab:prior_art} summarizes the methodologies, data requirements, geographic scopes, and operational constraints identified in the literature.
-
-\input{tables/tab_prior_art.tex}
-
-Urban rooftop solar assessments generally follow three paradigms:
-\begin{enumerate}
-    \item \textbf{High-Density LiDAR and 3D Mesh Modeling:} Studies utilizing airborne LiDAR point clouds generate digital surface models (DSMs) capable of extracting roof slope, aspect, and micro-shading from chimneys and parapets \cite{rees2025, walch2020}. Although highly accurate, airborne LiDAR data collection is cost-prohibitive for most developing and emerging economies. In the UAE and GCC, public airborne LiDAR point clouds are unavailable for civilian solar prospecting.
-    \item \textbf{Deep Learning on High-Resolution Satellite Imagery:} Frameworks such as DeepSolar \cite{castellanos2017} and commercial platforms employ convolutional neural networks to detect installed arrays or segment rooftops from satellite imagery. While capable of broad coverage, these systems depend on commercial satellite data subscriptions, require substantial graphics processing unit (GPU) compute, and function as opaque proprietary algorithms.
-    \item \textbf{Cadastral and Volunteered Geographic Information (VGI):} Several European studies combine municipal cadastral databases with OpenStreetMap to estimate aggregate city-level rooftop technical potential \cite{assouline2017, mainzer2017}. However, these workflows typically rely on proprietary desktop GIS suites (such as Esri ArcGIS), require local government GIS files that are restricted in the Middle East, and stop at gross solar radiation without modeling single-building equipment sizing or simple payback economics.
-\end{enumerate}
-
-\subsection{Documented Gap Statement}
-
-Existing automated commercial rooftop solar feasibility services (such as Google Project Sunroof and the Google Solar API) rely on proprietary airborne LiDAR and high-resolution aerial photogrammetry, restricting their availability almost exclusively to North America, Western Europe, and select OECD nations. Across the United Arab Emirates, the wider Arabian Gulf, and the Global South, these commercial platforms have zero coverage. Concurrently, academic literature on GIS-based solar potential is heavily concentrated on European and North American cities, assuming access to municipal cadastres, airborne laser scanning, or three-dimensional CityGML models that do not exist or are strictly restricted in developing and emerging economies. While open tools such as pvlib model PV physics with high fidelity, they require pre-determined physical geometries and offer no spatial extraction capability. Prior OpenStreetMap-based studies have focused primarily on regional macro-aggregations in Europe, leaving an unaddressed gap: there is no lightweight, open-source, local-first framework that converts raw street addresses or geographical coordinates directly into end-to-end solar pre-feasibility reports using only freely accessible global vector data, whose geometric fidelity and yield predictions are quantitatively benchmarked in a commercial coverage-gap region.
-
-\section{Methodology and Mathematical Formulation}
-
-The computational pipeline of the SolarScan framework consists of five sequential stages, illustrated in Fig.~\ref{fig:pipeline_architecture}. The framework is implemented in pure Python and requires only open-source numerical libraries (NumPy, Shapely, Matplotlib, ReportLab).
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.98\textwidth]{fig_pipeline_architecture.pdf}
-\caption{End-to-end computational pipeline of the SolarScan rooftop solar pre-feasibility framework.}
-\label{fig:pipeline_architecture}
-\end{figure*}
-
-\subsection{Stage 1: Geocoding and Query Coordinate Ingestion}
-
-The pipeline accepts an arbitrary user query string, which may consist of a street address, facility name, geographical coordinates (latitude $\phi$, longitude $\lambda$), or a Google Maps uniform resource locator (URL). Coordinate strings and map URLs are parsed using regular expressions to extract decimal degrees:
-\begin{equation}
-(\phi_0, \lambda_0) = \mathcal{P}_{\mathrm{url}}(\mathrm{query})
-\end{equation}
-When the query contains an unstructured textual address, the system queries the OpenStreetMap Nominatim service with a structured user-agent header. Nominatim resolves the query to the most probable centroid $(\phi_0, \lambda_0)$.
-
-\subsection{Stage 2: OpenStreetMap Overpass Vector Retrieval}
-
-Given centroid $(\phi_0, \lambda_0)$, the framework queries the OpenStreetMap Overpass API using the Overpass Query Language (QL) within a bounding search radius $r_s = 250$~m:
-\begin{equation}
-\mathcal{Q} = \left[ \mathrm{way}[\text{``building''}](\mathrm{around}: r_s, \phi_0, \lambda_0); \right]
-\end{equation}
-The Overpass response contains a set of nodes $N = \{(\phi_j, \lambda_j)\}$ and polygonal ways $W = \{w_k\}$. To ensure robust continuous operation against public server rate limits, the client cycles across independent global mirrors. If multiple building ways exist within $r_s$, the system calculates the Euclidean distance between $(\phi_0, \lambda_0)$ and the geometric centroid of each candidate polygon, selecting the closest building:
-\begin{equation}
-w^* = \arg\min_{w_k} \sqrt{(\bar{\phi}_k - \phi_0)^2 + (\bar{\lambda}_k - \lambda_0)^2 \cos^2(\phi_0)}
-\label{eq:centroid_distance}
-\end{equation}
-
-\subsection{Stage 3: Local Metric Coordinate Projection}
-
-OpenStreetMap stores node coordinates in WGS84 angular degrees ($\phi, \lambda$). To compute physical areas and perimeters in meters without distortion, the polygon vertices are projected into a local Cartesian metric frame $(x_i, y_i)$ centered at the polygon's centroid $(\phi_c, \lambda_c)$:
-\begin{align}
-y_i &= (\phi_i - \phi_c) \cdot \frac{\pi}{180} \cdot R_e \\
-x_i &= (\lambda_i - \lambda_c) \cdot \frac{\pi}{180} \cdot R_e \cdot \cos(\phi_c)
-\end{align}
-where $R_e = 6{,}371{,}000$~m is the mean volumetric radius of the Earth. For building footprints with spans under 500~m, the geometric scale distortion of this equirectangular projection is bounded by $\mathcal{O}((\Delta \phi)^2) < 0.01\%$ relative to conformal transverse Mercator projections, eliminating the need for heavy geospatial GIS projection dependencies.
-
-\subsection{Stage 4: Gross Footprint Area via Gauss Shoelace Formula}
-
-The gross planar footprint area $A_{\mathrm{raw}}$ of the projected polygon with $n$ ordered boundary vertices $(x_0, y_0), \dots, (x_{n-1}, y_{n-1})$ along a simple non-self-intersecting Jordan curve is computed using the Gauss shoelace formula:
-\begin{equation}
-A_{\mathrm{raw}} = \frac{1}{2} \left| \sum_{i=0}^{n-1} \left( x_i y_{i+1} - x_{i+1} y_i \right) \right|
-\label{eq:shoelace}
-\end{equation}
-where $(x_n, y_n) = (x_0, y_0)$. The total polygon perimeter $P$ is calculated as the sum of Euclidean edge lengths:
-\begin{equation}
-P = \sum_{i=0}^{n-1} \sqrt{(x_{i+1} - x_i)^2 + (y_{i+1} - y_i)^2}
-\label{eq:perimeter}
-\end{equation}
-
-\subsection{Stage 5: Usable Rooftop Area and Setback Derating}
-
-Municipal building fire codes and maintenance safety regulations require perimeter clearance walkways around commercial and residential rooftops. In the UAE and GCC, civil defense regulations standardly specify a minimum perimeter clearance of $s = 1.5$~m to permit firefighter access and maintenance transit \cite{dewa2023}. 
-
-In SolarScan, the net usable rooftop area $A_{\mathrm{usable}}$ is modeled analytically by subtracting the perimeter setback buffer and any documented mechanical obstruction area $A_{\mathrm{obs}}$:
-\begin{equation}
-A_{\mathrm{usable}} = \max\left(0, A_{\mathrm{raw}} - P \cdot s - A_{\mathrm{obs}}\right)
-\label{eq:usable_area}
-\end{equation}
-By Steiner's polynomial for Minkowski erosion, the exact inward setback area of any planar convex polygon is $A(s) = A_{\mathrm{raw}} - P \cdot s + \pi s^2$. Because the positive corner term $\pi s^2$ is omitted, the linear perimeter formula in \eqref{eq:usable_area} represents a strictly conservative lower bound on usable rooftop area, underestimating true usable area by only $\pi (1.5)^2 \approx 7.07\text{ m}^2$ (under $0.5\%$ on commercial facilities).
-
-\subsection{Stage 6: Dominant Azimuth Extraction}
-
-For flat commercial and institutional rooftops, PV modules are typically mounted on ballasted racking oriented parallel to the building's primary architectural axis to maximize packing density. The dominant roof azimuth $\psi$ is derived from the longest edge vector of the projected footprint:
-\begin{align}
-i^* &= \arg\max_i \sqrt{(x_{i+1} - x_i)^2 + (y_{i+1} - y_i)^2} \\
-\Delta x &= x_{i^*+1} - x_{i^*}, \quad \Delta y = y_{i^*+1} - y_{i^*} \\
-\psi &= \left[ \operatorname{atan2}(\Delta x, \Delta y) \cdot \frac{180}{\pi} \right] \bmod 360
-\end{align}
-where $\psi$ is measured clockwise from true North ($0^\circ = \text{North}$, $90^\circ = \text{East}$, $180^\circ = \text{South}$, $270^\circ = \text{West}$).
-
-\subsection{Stage 7: Photovoltaic Array Sizing}
-
-The direct current (DC) nameplate capacity $P_{\mathrm{dc}}$ (in kW) under Standard Test Conditions (STC: 1,000~W/m$^2$ irradiance, $25^\circ\text{C}$ cell temperature) is sized from usable area:
-\begin{equation}
-P_{\mathrm{dc}} = A_{\mathrm{usable}} \cdot \eta_{\mathrm{mod}} \cdot \frac{1{,}000\text{ W/m}^2}{1{,}000\text{ W/kW}} = A_{\mathrm{usable}} \cdot \eta_{\mathrm{mod}}
-\label{eq:dc_capacity}
-\end{equation}
-where $\eta_{\mathrm{mod}}$ is the nominal module efficiency (defaulting to 0.20 for modern monocrystalline silicon modules). 
-
-The recommended alternating current (AC) inverter capacity $P_{\mathrm{ac}}$ is determined by applying the target Inverter Loading Ratio ($\mathrm{ILR} = P_{\mathrm{dc}} / P_{\mathrm{ac}}$), standardly chosen as $\mathrm{ILR} = 1.20$:
-\begin{equation}
-P_{\mathrm{ac}} = \frac{P_{\mathrm{dc}}}{\mathrm{ILR}}
-\end{equation}
-The estimated module count $N_{\mathrm{mod}}$ for standard 400~Wp panels is $N_{\mathrm{mod}} = \lfloor (P_{\mathrm{dc}} \cdot 1{,}000) / 400 \rfloor$.
-
-\subsection{Stage 8: Empirical Orientation Derate and Annual Yield}
-
-In the Arabian Gulf, the optimal annual fixed tilt angle $\beta$ matches the local latitude ($\beta \approx 20^\circ$ to $25^\circ$) with true South orientation ($\psi = 180^\circ$) \cite{radhi2010}. Deviation from optimal orientation reduces incident plane-of-array (POA) irradiance. We apply an empirical orientation derating factor $f_{\mathrm{orient}} \in [0.5, 1.0]$:
-\begin{align}
-\Delta \psi &= \left| ((\psi - 180 + 180) \bmod 360) - 180 \right| \\
-f_{\mathrm{orient}} &= \max \left( 0.5, \, \cos\left(\frac{\pi \Delta \psi}{360}\right) \cos\left(\frac{\pi |\beta - 20^\circ|}{360}\right) \right)
-\end{align}
-
-Total annual AC electrical energy generation $E_{\mathrm{annual}}$ (in kWh/year) is modeled by:
-\begin{equation}
-E_{\mathrm{annual}} = P_{\mathrm{dc}} \cdot \mathrm{PSH} \cdot 365 \cdot f_{\mathrm{orient}} \cdot \mathrm{PR}
-\label{eq:annual_yield}
-\end{equation}
-where $\mathrm{PSH}$ represents regional Peak Sun Hours per day (standard baseline of 5.50~kWh/m$^2$/day in the UAE) and $\mathrm{PR}$ is the system Performance Ratio. In accordance with regional operating observations \cite{alteneiji2020, alali2013}, we adopt $\mathrm{PR} = 0.85$, which accounts for inverter efficiency, thermal derating under elevated desert ambient temperatures, soiling, and wiring losses.
-
-\subsection{Stage 9: Economic Pre-Feasibility and Simple Payback}
-
-Preliminary financial return is evaluated through turnkey capital expenditure ($\mathrm{CAPEX}$) and simple payback period $T_{\mathrm{pb}}$:
-\begin{align}
-\mathrm{CAPEX} &= P_{\mathrm{dc}} \cdot c_{\mathrm{turnkey}} \\
-S_{\mathrm{annual}} &= E_{\mathrm{annual}} \cdot r_{\mathrm{tariff}} \\
-T_{\mathrm{pb}} &= \frac{\mathrm{CAPEX}}{S_{\mathrm{annual}}}
-\end{align}
-where $c_{\mathrm{turnkey}}$ is the installed system cost (assumed at \$1,000/kW DC for commercial rooftop installations) and $r_{\mathrm{tariff}}$ is the local commercial electricity tariff (0.38~AED/kWh in Sharjah and Dubai).
-
-\section{Empirical Validation and Experimental Setup}
-
-\subsection{Validation Benchmark Dataset}
-
-To assess the reliability of crowdsourced OSM footprints in a region without commercial solar screening tools, we assembled an empirical benchmark of $N = 24$ buildings across five UAE Emirates: Sharjah (7), Dubai (7), Abu Dhabi (5), Ajman (4), and Ras Al Khaimah (1). 
-
-To reflect practical rooftop solar deployment, the benchmark focuses on flat commercial, industrial, and institutional facilities exceeding $1{,}000$~m$^2$ where rooftop solar installations are practically viable, excluding complex pitched or structurally crowded roofs:
+We built a tool on this idea and asked three questions:
 \begin{itemize}
-    \item \textbf{Academic and Institutional (4 buildings):} Higher-education campus facilities at the University of Sharjah featuring flat departmental complexes and laboratories (Computer Science W5, Engineering Faculty M4, College of Fine Arts M11, and M13 Annex).
-    \item \textbf{Commercial and Retail (9 buildings):} Regional shopping centers, hypermarkets, and commercial retail facilities featuring expansive flat rooftops (Mall of the Emirates, Abu Dhabi Mall, City Centre Ajman, RAK Mall, ACE Hardware Al Quoz, Emirates NBD Operations Center, AlSafeer Mall Mussafah, Salem Shopping Center, and Ajman Central Public Market).
-    \item \textbf{Industrial and Logistics (11 buildings):} High-bay distribution warehouses, manufacturing halls, and freight depots in major industrial zones and free zones (JAFZA Logistics Depot / Inchcape Shipping, Alserkal Avenue, On Demand Logistics, TCTI Manufacturing Hall, Sku Line Logistics, Mussafah Depots 1 and 2, Emirates Post Central Sorting Hub, and Sharjah Logistics Depots 10, 11, and 13).
+\item \textbf{Q1:} How close is the OSM roof area to the real roof?
+\item \textbf{Q2:} What does a full screening report look like for a real building?
+\item \textbf{Q3:} Which inputs change the answer most?
 \end{itemize}
 
-\subsection{Ground Truth Reference Measurements}
+The paper makes three contributions. First, SolarScan, an open-source tool that goes from an address to a report using only OSM and PVGIS. Second, a public test of OSM roof areas on \NBuildings{} UAE buildings, with checked hand traces of the roofs and a description of how OSM outlines fail. Third, a sensitivity study that shows which inputs matter.
 
-For each validation building, an independent ground truth reference area $A_{\mathrm{ref}}$ was established through manual high-resolution satellite imagery polygon tracing using Google Earth Pro and calibrated municipal orthoimagery. Tracing was conducted at maximum optical zoom (sub-meter resolution) along the outer perimeter of the structural parapet wall. The primary reference facility, the Computer Science Department Building W5 at the University of Sharjah, was independently verified against architectural campus facility cadastre records.
+% ======================================================================
+\section{Related Work}
 
-\begin{figure}[t]
+Table~\ref{tab:prior} groups earlier work by its main data source. Reviews describe many methods that use geographic information systems (GIS) to estimate rooftop PV potential \cite{freitas2015, gassar2021}. Most of them need LiDAR, 3D building models or city data. Deep-learning methods find roofs or panels in aerial images \cite{yu2018}, but they need large image sets and strong computers. Energy models such as pvlib \cite{holmgren2018} and PVGIS \cite{huld2012} are accurate, but the user must describe the roof. Mainzer \emph{et al.} \cite{mainzer2014} used OSM to estimate the solar potential of a whole country, and later combined OSM outlines with aerial images to find roof planes in a city \cite{mainzer2017}. Joshi \emph{et al.} \cite{joshi2021} mapped rooftop PV worldwide from building footprints and machine learning; they name the footprints as the largest source of error. To our knowledge, no open tool turns one address into a screening report, and no study has checked OSM roof areas for this use in the UAE.
+
+\begin{table}[t]
 \centering
-\includegraphics[width=0.48\textwidth]{fig_satellite_vs_osm_comparison.pdf}
-\caption{Visual comparison of rooftop delineation for the JAFZA Logistics Depot (Inchcape Shipping, Dubai): (a) High-resolution satellite imagery with manual parapet tracing ($A_{\mathrm{ref}} = 4{,}122.17$~m$^2$, $P = 298.49$~m); (b) Crowdsourced OpenStreetMap vector footprint ($A_{\mathrm{OSM}} = 3{,}943.34$~m$^2$, relative error $-4.34\%$). The variance reflects the outer parapet ledge captured in satellite imagery versus the building perimeter in crowdsourced vector layers.}
-\label{fig:satellite_vs_osm}
-\end{figure}
-
-Fig.~\ref{fig:satellite_vs_osm} presents a side-by-side visual comparison between manual satellite parapet tracing and crowdsourced vector extraction for the JAFZA Logistics Depot (Inchcape Shipping, Dubai). Tracing along the outer parapet wall yields a reference area of $4{,}122.17$~m$^2$ and perimeter of $298.49$~m, compared to the crowdsourced footprint of $3{,}943.34$~m$^2$ ($-4.34\%$ relative error).
-
-\subsection{Statistical Error Metrics}
-
-We report four standard statistical metrics across the validation benchmark:
-\begin{align}
-\mathrm{MAPE} &= \frac{1}{N} \sum_{k=1}^N \left| \frac{A_{\mathrm{osm},k} - A_{\mathrm{ref},k}}{A_{\mathrm{ref},k}} \right| \times 100\% \\
-\mathrm{MBE} &= \frac{1}{N} \sum_{k=1}^N \left( \frac{A_{\mathrm{osm},k} - A_{\mathrm{ref},k}}{A_{\mathrm{ref},k}} \right) \times 100\% \\
-\mathrm{RMSE} &= \sqrt{\frac{1}{N} \sum_{k=1}^N \left( A_{\mathrm{osm},k} - A_{\mathrm{ref},k} \right)^2} \\
-R^2 &= \left( \frac{\sum (A_{\mathrm{ref}} - \bar{A}_{\mathrm{ref}})(A_{\mathrm{osm}} - \bar{A}_{\mathrm{osm}})}{\sqrt{\sum (A_{\mathrm{ref}} - \bar{A}_{\mathrm{ref}})^2 \sum (A_{\mathrm{osm}} - \bar{A}_{\mathrm{osm}})^2}} \right)^2
-\end{align}
-
-\section{Results and Discussion}
-
-\subsection{Geometric Area Agreement Across Typologies}
-
-Table~\ref{tab:validation_dataset} presents the full empirical results across all 24 validation buildings, comparing automated OSM shoelace area $A_{\mathrm{osm}}$ against independent satellite reference area $A_{\mathrm{ref}}$. Table~\ref{tab:error_metrics} summarizes the statistical error metrics broken down by building typology.
-
-\input{tables/tab_validation_dataset.tex}
-\input{tables/tab_error_metrics.tex}
-
-Across the complete benchmark spanning footprint areas from 124.45~m$^2$ to 202,127.18~m$^2$, automated OSM footprint extraction demonstrates high geometric consistency:
-\begin{itemize}
-    \item Overall Mean Absolute Percentage Error is \textbf{4.54\%}.
-    \item Overall Mean Bias Error is \textbf{-4.54\%}, with error values strictly bounded between -3.03\% and -6.29\%.
-    \item Coefficient of determination is $R^2 = 1.000$, demonstrating strong linear proportionality across building scales.
-    \item Root Mean Square Error is 1,432.71~m$^2$, dominated by the largest regional commercial facilities.
-\end{itemize}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.48\textwidth]{fig_validation_scatter.pdf}
-\caption{Parity scatter plot comparing automated OpenStreetMap footprint area against independent high-resolution satellite reference measurements across 24 UAE buildings on a logarithmic scale.}
-\label{fig:validation_scatter}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.48\textwidth]{fig_error_distribution.pdf}
-\caption{Distribution of relative percentage footprint error across building typologies, displaying median values, interquartile ranges, and overall mean bias (-4.54\%).}
-\label{fig:error_distribution}
-\end{figure}
-
-As shown in Fig.~\ref{fig:validation_scatter} and Fig.~\ref{fig:error_distribution}, the geometric error exhibits clear typology-dependent characteristics:
-\begin{enumerate}
-    \item \textbf{Commercial and Industrial Structures Show Lowest Error:} Commercial retail centers and industrial logistics warehouses achieve the lowest MAPE (4.32\% and 4.36\%, respectively). These structures feature regular polygonal perimeters, minimizing digitization ambiguity in OpenStreetMap. Mall of the Emirates ($A_{\mathrm{osm}} = 202{,}127.18$~m$^2$) exhibited an error of only -3.03\%.
-    \item \textbf{Negative Bias is Physically Explainable:} Every building in the benchmark exhibits a negative relative error ($\mathrm{MBE} = -4.54\%$). This consistent underestimation reflects standard volunteer mapping practices in OpenStreetMap: contributors trace exterior ground-level wall footprints, omitting structural roof eaves, parapet caps, and shading cantilever overhangs that appear in high-resolution aerial satellite traces. In the context of solar pre-feasibility, this negative bias is advantageous: it produces conservative usable area estimates that prevent over-sizing array capacity.
-    \item \textbf{Academic Facilities Exhibit Parapet Variance:} Academic departmental complexes exhibit slightly higher MAPE (5.53\%). These complexes feature multi-tier roof parapet levels and mechanical access penthouses that slightly expand the satellite-traced footprint relative to the ground perimeter.
-\end{enumerate}
-
-
-\subsection{Case Study: University of Sharjah Computer Science Building W5}
-
-To demonstrate end-to-end report generation, we present a detailed case study of the Computer Science Department Building W5 at the University of Sharjah ($25.28933^\circ\text{N}, 55.47831^\circ\text{E}$). The extracted building footprint and orientation vector are shown in Fig.~\ref{fig:w5_case_study}, and full technical and economic parameters are detailed in Table~\ref{tab:w5_case_study}.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.48\textwidth]{fig_w5_case_study.pdf}
-\caption{Extracted OpenStreetMap footprint geometry for University of Sharjah Computer Science Department Building W5, displaying Cartesian vertices, gross area (1,610.02~m$^2$), and dominant axis orientation ($\psi = 68.2^\circ$).}
-\label{fig:w5_case_study}
-\end{figure}
-
-\input{tables/tab_w5_case_study.tex}
-
-The framework automatically queries OSM way ID 204709053, retrieving 14 ordered boundary nodes. Shoelace area calculation yields a gross footprint of $1{,}610.02$~m$^2$, which represents 94.72\% of the independent ground truth reference area ($1{,}699.86$~m$^2$, a relative difference of 5.28\%). 
-
-Applying the standard 1.50~m perimeter setback along the 165.40~m perimeter subtracts 248.10~m$^2$, yielding a net usable rooftop area of $1{,}361.92$~m$^2$. At 20\% module efficiency, the recommended DC capacity is $272.38$~kW DC, paired with a recommended $226.99$~kW AC inverter capacity ($\mathrm{ILR} = 1.20$). Accounting for the building's dominant azimuth ($\psi = 68.2^\circ$, orientation derate $f_{\mathrm{orient}} = 0.5601$), racking tilt ($\beta = 15.0^\circ$), regional irradiance (5.50~PSH), and performance losses ($\mathrm{PR} = 0.85$), the system generates an estimated $260.33$~MWh annually. At an electricity tariff of 0.38~AED/kWh, annual utility savings reach 98,925~AED, achieving an estimated simple payback period of 2.75 years against an estimated turnkey capital cost of 272,384~AED (1,000~AED/kW DC). 
-
-Beyond simple payback, life-cycle discounted cash flow modeling over a 25-year operational lifespan (5.0\% discount rate, 0.5\% annual PV degradation, 1.5\% annual operation and maintenance expense, and 2.0\% tariff escalation) yields a Net Present Value (NPV) of 1,271,167~AED, a discounted payback period of 3.20~years, and a Levelized Cost of Electricity (LCOE) of 0.0943~AED/kWh. Clean solar generation also avoids an estimated 109.34~tCO$_2$e of greenhouse gas emissions annually under the UAE electrical grid emission baseline factor (0.42~kg~CO$_2$e/kWh).
-
-\subsection{Parametric Sensitivity Analysis}
-
-\subsubsection{Setback Buffer Distance and Building Scale}
-
-To investigate the geometric impact of perimeter setback clearances, we evaluated usable area fraction as setback distance $s$ varied from 0.0 to 3.0~m across three building typologies. The results are illustrated in Fig.~\ref{fig:sensitivity_setback} and summarized in Table~\ref{tab:sensitivity_setback}.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.48\textwidth]{fig_sensitivity_setback.pdf}
-\caption{Usable rooftop area percentage as a function of perimeter setback distance $s$ across three building scales, illustrating the governing influence of the perimeter-to-area ($P/A$) ratio.}
-\label{fig:sensitivity_setback}
-\end{figure}
-
-\input{tables/tab_sensitivity_setback.tex}
-
-The analysis reveals an important geometric principle: perimeter setback impact is strictly governed by the building's perimeter-to-area ratio ($P/A$):
-\begin{equation}
-\frac{A_{\mathrm{usable}}}{A_{\mathrm{raw}}} = 1 - \left(\frac{P}{A_{\mathrm{raw}}}\right) \cdot s
-\end{equation}
-For a small commercial facility ($A = 1{,}222$~m$^2$, $P = 142$~m, $P/A = 0.116\text{ m}^{-1}$), a 1.5~m setback consumes 17.4\% of the roof area, leaving 82.6\% usable. In contrast, for an expansive commercial shopping mall ($A = 36{,}155$~m$^2$, $P = 837.3$~m, $P/A = 0.023\text{ m}^{-1}$), the identical 1.5~m setback consumes only 3.5\% of the roof area, leaving 96.5\% usable. For medium institutional facilities such as UoS W5 ($P/A = 0.103\text{ m}^{-1}$), usable area remains 84.6\%. This finding demonstrates that approximate perimeter setback equations are robust for commercial, logistics, and institutional screening across diverse building scales.
-
-
-\subsubsection{Orientation, Tilt, and Uncertainty Bounds}
-
-Fig.~\ref{fig:sensitivity_azimuth_tilt} plots specific annual generation (kWh/kWp/year) across the full spectrum of roof azimuths ($\psi \in [0^\circ, 360^\circ]$) and panel tilts ($\beta \in [0^\circ, 45^\circ]$). Maximum specific generation (1,706.38~kWh/kWp) occurs at optimal South orientation ($\psi = 180^\circ$) and $20^\circ$ tilt. 
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.48\textwidth]{fig_sensitivity_azimuth_tilt.pdf}
-\caption{Contour surface of annual specific energy generation (kWh/kWp/year) as a function of roof azimuth $\psi$ and tilt angle $\beta$ under UAE solar resource conditions.}
-\label{fig:sensitivity_azimuth_tilt}
-\end{figure}
-
-Due to high direct normal irradiance in the Arabian Gulf, flat installations ($\beta = 0^\circ$) retain 91.2\% of optimal yield. Modules oriented East ($\psi = 90^\circ$) or West ($\psi = 270^\circ$) maintain 85.4\% of optimal yield at standard $15^\circ$ racking. Only arrays oriented toward the northern quadrant ($\psi < 45^\circ$ or $\psi > 315^\circ$) with steep tilts experience severe derating ($>25\%$). 
-
-To assess financial and yield risk under stochastic solar resource and tariff variations, Monte Carlo uncertainty propagation ($N = 1{,}000$ iterations) was evaluated for Building W5. Stochastically sampling irradiance ($\mu=5.50, \sigma=0.25$~PSH), performance ratio ($\mu=0.85, \sigma=0.03$), tariff rates (0.35 to 0.42~AED/kWh), and turnkey capital costs ($1{,}000 \pm 60$~AED/kW) reveals 5th, 50th, and 95th percentile annual yields of 236.52~MWh, 260.58~MWh, and 287.26~MWh, respectively, corresponding to simple payback ranges between 2.30 and 3.17~years. Furthermore, module degradation sweeps across 0.3\%/year to 1.0\%/year confirm 25-year cumulative energy production between 5,783.98~MWh and 6,279.25~MWh. This confirms that in low-latitude, high-irradiance regions, flat-roof ballasted systems remain economically viable across diverse architectural orientations and operational conditions.
-
-\section{Practitioner Guidance: Operational Scope}
-
-To ensure sound engineering practice, Table~\ref{tab:guidance} provides explicit guidance on when the OpenStreetMap pre-feasibility methodology is suitable and when detailed on-site engineering studies are required.
-
-\begin{table}[!b]
-\centering
-\caption{Practitioner Decision Matrix for Crowdsourced Solar Screening}
-\label{tab:guidance}
+\caption{Related Work by Main Data Source}
+\label{tab:prior}
 \footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{p{3.8cm}p{4.2cm}}
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{llll}
 \toprule
-\textbf{Recommended Operational Scope} & \textbf{Unsuitable / Requires Detailed EPC Study} \\
+Work & Main data & Region & One address \\
 \midrule
-Rapid initial screening of commercial portfolios and municipal buildings. & Complex residential hip/gable multi-pitch roofs with multiple slope facets. \\
-Flat concrete or metal commercial rooftops ($A_{\mathrm{raw}} > 500$~m$^2$). & Severe inter-building shading from adjacent high-rise towers. \\
-Preliminary CAPEX budgeting and simple payback threshold screening. & Structural load-bearing capacity and seismic/wind engineering checks. \\
-Regions lacking commercial solar APIs (UAE, GCC, Global South). & Electrical service panel connection and grid-interconnection studies. \\
+Gagnon \emph{et al.} \cite{gagnon2016, gagnon2018} & LiDAR and GIS & USA & No \\
+Walch \emph{et al.} \cite{walch2020} & 3D city model & Switzerland & No \\
+Assouline \emph{et al.} \cite{assouline2018} & Land registry & Switzerland & No \\
+Mainzer \emph{et al.} \cite{mainzer2014} & OSM and statistics & Germany & No \\
+Mainzer \emph{et al.} \cite{mainzer2017} & OSM and images & Germany & No \\
+Joshi \emph{et al.} \cite{joshi2021} & Building footprints & World & No \\
+Rees \emph{et al.} \cite{rees2025} & LiDAR and open data & Norway & No \\
+Yu \emph{et al.} \cite{yu2018} & Aerial images & USA & No \\
+pvlib, PVGIS \cite{holmgren2018, huld2012} & Roof given by user & World & Yes \\
+This work & OSM and PVGIS & UAE & Yes \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\section{Limitations}
+% ======================================================================
+\section{Method}
 
-To maintain research rigor, we explicitly acknowledge the limitations of the proposed framework:
-\begin{enumerate}
-    \item \textbf{Crowdsourced Completeness and Freshness:} The framework depends on OpenStreetMap data availability. While urban centers in the UAE exhibit high building footprint density, newly constructed desert developments or rural settlements may lack mapped polygons, triggering synthetic fallback bounding.
-    \item \textbf{Flat-Roof Assumption:} Sizing models assume horizontal rooftops where modules are mounted on ballasted racking. While flat roofs represent the dominant architectural typology for commercial, institutional, and industrial facilities across the Arabian Gulf, this assumption does not capture complex pitched residential roofs with multiple slope facets.
-    \item \textbf{Micro-Obstruction and Shading Omission:} Raw vector footprints do not capture rooftop mechanical units (air handling units, chiller pipes, satellite fixtures) or cast-shadow profiles from neighboring high-rise structures.
-    \item \textbf{Dynamic Soiling and Thermal Cycling:} Elevated ambient desert temperatures pushing cell temperatures above 65$^\circ$C and dust accumulation affect operational yields. While our empirical derates and Monte Carlo uncertainty sweeps bound bulk performance losses, operational plant design requires site-specific soiling wash cycles and dynamic thermal time-series.
-    \item \textbf{Grid Interconnection Constraints:} Pre-feasibility estimates quantify physical rooftop hosting potential, but do not evaluate distribution transformer capacity headroom, reverse power flow limits, or utility grid interconnect requirements.
-    \item \textbf{Screening Scope:} The framework is designed strictly for preliminary decision support. It does not replace detailed structural load calculations, electrical single-line engineering, or municipal permitting.
-\end{enumerate}
+SolarScan works in six steps: find the building, measure the roof, remove the edge strip, lay out the modules, estimate the energy and estimate the payback. Fig.~\ref{fig:hero} shows the result for one building. Table~\ref{tab:assume} lists the default values and their sources. The user can change every value in a settings file.
 
-\balance
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_hero.pdf}
+\caption{SolarScan on Building W5, University of Sharjah. (a) Satellite image with the OSM outline and the hand trace; the shift comes from image misalignment and building lean. (b) Usable roof and module rows. (c) 3D view of (b). (d) Row spacing in the noon sun of 21 December.}
+\label{fig:hero}
+\end{figure*}
 
+\subsection{Find the Building}
+The user gives an address or coordinates. The tool asks OSM for all buildings within 250~m. It selects the building that contains the point or, if there is none, the closest one. If OSM has no building there, the tool stops with an error message. It never invents an outline.
+
+\subsection{Measure the Roof}
+OSM stores each corner of the outline as latitude $\phi$ and longitude $\lambda$. We convert them to meters on a flat plane around the center of the building $(\phi_0, \lambda_0)$:
+\begin{equation}
+x_i = N\cos\phi_0\,(\lambda_i-\lambda_0), \qquad y_i = M\,(\phi_i-\phi_0),
+\end{equation}
+where $M$ and $N$ are the radii of curvature of the Earth at $\phi_0$ in the World Geodetic System 1984. The roof area $A$ and the perimeter $P$ follow from the corners $(x_i, y_i)$:
+\begin{equation}
+A = \frac12\Big|\sum_{i=1}^{n}(x_i y_{i+1}-x_{i+1} y_i)\Big|, \qquad P=\sum_{i=1}^{n} d_i,
+\end{equation}
+where $d_i$ is the length of side $i$ and corner $n+1$ is corner 1. For all test buildings, this area is within \ProjErr\% of the exact area on the Earth's surface.
+
+\subsection{Find the Usable Area}
+Safety rules ask for a clear strip along the roof edge. We use a strip of width $s=\CfgSetback$~m and shrink the outline inward by $s$ to get the usable area $A_u$. For a simple roof, this gives about
+\begin{equation}
+A_u \approx A - sP .
+\label{eq:pa}
+\end{equation}
+So a small or narrow building, with a large perimeter for its area, loses more of its roof.
+
+\subsection{Lay Out the Modules}
+On a flat roof, the modules stand in tilted rows that face south, as in \cite{gagnon2016}. Each module is 1~m wide and $L=2$~m long, and is tilted by \CfgTilt$^\circ$. The rows need gaps so that one row does not shade the next. We space them by $L/k$, where $k$ is the share of roof covered by modules. With $k=\CfgPack$, the rows are \RowPitch~m apart. At noon on 21 December, the sun is at its lowest of the year (\ShadeElev$^\circ$). The shadow of a row then reaches \ShadeLen~m, less than the \ShadeGap~m gap to the next row (Fig.~\ref{fig:hero}d). On that day, the rows do not shade each other from \ShadeFrom{} to \ShadeTo{}. PVGIS does not model the shading outside these hours. The tool places a module only where its whole footprint fits inside the usable area, and counts the modules $N$ (Fig.~\ref{fig:hero}b). The direct-current (dc) capacity is
+\begin{equation}
+P_{\mathrm{dc}} = N\,P_{\mathrm{mod}} ,
+\end{equation}
+where $P_{\mathrm{mod}}=\ModuleW$~W is the rating of one module with an efficiency of \CfgEta\%. A simpler rule, $P_{\mathrm{dc}} = k\,\eta\,A_u \cdot 1~\text{kW/m}^2$, ignores that whole modules do not fill the roof edges. We compare the two in Section~\ref{sec:q2}. An inverter converts the dc power to alternating current (ac); we size it at the dc capacity divided by \CfgDcac.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_failures.pdf}
+\caption{OSM outline (blue) and hand-traced roof (orange): one correct outline and the four error types. (b) Part of the hall missing. (c) Market ground counted as roof; only the shed has a roof. (d) Courtyard counted as roof. (e) Several roof levels. IDs as in Table~\ref{tab:buildings}.}
+\label{fig:failures}
+\end{figure*}
+
+\subsection{Estimate the Energy}
+PVGIS uses satellite data and models the effects of heat and sun angle on the panels \cite{huld2012}. We downloaded its yearly energy per kilowatt of rated module power, $Y$ (kWh per kWp, kilowatt-peak), for all tilts and directions at one site in each emirate. The tool reads $Y$ from these stored tables, so it works offline. The yearly energy is
+\begin{equation}
+E = P_{\mathrm{dc}}\,Y .
+\end{equation}
+To check PVGIS, we modeled the same system with pvlib \cite{holmgren2018}, which uses its own weather and panel models. The two tools agreed within \PvlibMax\% for seven tilts and directions.
+
+\subsection{Estimate the Payback}
+With an installed cost $c$ per kWp and an electricity price $r$, the simple payback in years is
+\begin{equation}
+T = \frac{c\,P_{\mathrm{dc}}}{r\,E} = \frac{c}{r\,Y} .
+\label{eq:payback}
+\end{equation}
+The payback does not depend on the roof size. It depends only on cost, price and yield. The tool also reports the net present value (NPV) and the levelized cost of electricity (LCOE) over 25 years. All money values are in UAE dirham (AED).
+
+\begin{table}[t]
+\centering
+\caption{Assumed System and Default Values}
+\label{tab:assume}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lll}
+\toprule
+Item & Default & Source \\
+\midrule
+\multicolumn{3}{l}{\emph{What is installed}} \\
+Module & \ModuleW~W, 1~m $\times$ 2~m & typical \\
+Module type & crystalline silicon, \CfgEta\% & typical \\
+Mounting & fixed racks, \CfgTilt$^\circ$, facing south & \cite{gagnon2016} \\
+Row spacing & \RowPitch~m pitch ($k=\CfgPack$) & \cite{gagnon2016} \\
+Edge strip $s$ & \CfgSetback~m & assumption \\
+Inverter & dc/ac ratio \CfgDcac & \cite{gagnon2016} \\
+Grid & connected, no battery & assumption \\
+\midrule
+\multicolumn{3}{l}{\emph{How the energy is computed}} \\
+Solar data & PVGIS 5.3, satellite & \cite{huld2012} \\
+System losses & 14\% (cables, inverter, dirt) & PVGIS \\
+Module ageing & \CfgDeg\% per year & assumption \\
+\midrule
+\multicolumn{3}{l}{\emph{How the money is counted}} \\
+Installed cost $c$ & \CfgCost~AED/kWp & installers \\
+Electricity price $r$ & \CfgTariff~AED/kWh & top tariff band \\
+Energy use & all used in the building & assumption \\
+Maintenance & \CfgOm\% of cost per year & assumption \\
+Discount rate, lifetime & \CfgDisc\%, \CfgLife{} years & assumption \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ======================================================================
+\section{Test Setup}
+
+\input{generated/tab_buildings.tex}
+
+\subsection{Buildings}
+We chose \NBuildings{} flat-roof buildings in \NEmirates{} emirates: \NAcademic{} university buildings, \NCommercial{} shops and malls, and \NIndustrial{} warehouses and workshops (Table~\ref{tab:buildings}). Their OSM areas range from \AreaMin{} to \AreaMax~m$^2$. We saved each OSM outline, so the results do not change when the map is edited.
+
+\subsection{Reference Roof Areas}
+No official roof data are public for these buildings, so one author traced every roof by hand on the satellite images in Google Earth. The tracing files showed only a pin at each building, not the OSM outline. Two traces were redrawn after a first check. We then drew every trace and its OSM outline on a satellite image at a known scale (whole Web-Mercator zoom levels only) and checked that the trace followed the roof edge. All \NManual{} traces did. After the comparison, the author looked at the images again and labeled each OSM outline as correct or wrong. A wrong outline got an error type (Table~\ref{tab:failures}). All traces and labels are in the repository.
+
+\input{generated/tab_failures.tex}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_validation.pdf}
+\caption{OSM area error per building, sorted. Gray band: $\pm 10\%$. Arrows: errors outside the plot.}
+\label{fig:validation}
+\end{figure}
+
+\subsection{Error Measures}
+For each building, the area error is
+\begin{equation}
+e = \frac{A_{\mathrm{OSM}}-A_{\mathrm{trace}}}{A_{\mathrm{trace}}} .
+\end{equation}
+We report the mean absolute percentage error (MAPE), the median absolute error and the mean bias error (MBE), which is the mean of $e$. We do not report $R^2$, because the areas range over three orders of magnitude and $R^2$ would be close to 1 for almost any method.
+
+% ======================================================================
+\section{Results}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[height=2.55in]{fig_gui.png}\hfill
+\includegraphics[height=2.55in]{fig_report.png}
+\caption{SolarScan on a warehouse in Dubai (B17). Left: desktop interface; the cost and price sliders update the payback at once. Right: one-page report.}
+\label{fig:tool}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_orientation.pdf}
+\caption{PVGIS yield in Sharjah by panel direction for three tilts, as a share of the best.}
+\label{fig:orientation}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_tornado.pdf}
+\caption{Effect of each input on Building W5, changed one at a time between the two values shown. Orange: worse value. Blue: better value. Dashed: default.}
+\label{fig:tornado}
+\end{figure}
+
+\subsection{Q1: Is the OSM Roof Area Correct?}
+
+Fig.~\ref{fig:failures} shows a correct outline and one example of each error type. Fig.~\ref{fig:validation} shows the error for all buildings, and Table~\ref{tab:buildings} lists the values.
+
+\emph{When the outline is correct.} This was the case for \NOsmOk{} of the \NManual{} buildings. Their MAPE was \OkMape\%, the median error \OkMedape\% and the MBE \OkMbe\%. All errors were between \OkMin\% and \OkMax\%, and \OkWithinFive{} buildings were within 5\%. We found no trend with building size or type.
+
+\emph{When the outline is wrong.} This was the case for \NOsmBad{} of the \NManual{} buildings (\OsmBadPct\%), in four different ways (Table~\ref{tab:failures}, Fig.~\ref{fig:failures}). In \NPartial{} buildings, OSM mapped only one part of the building, so the area was \PartialMin\% to \PartialMax\% too small. In one market, OSM outlined the whole market ground, but only a small shed has a roof. In one office building, the open courtyard was counted as roof. One small building has roofs at several levels, and the hand trace covers only the upper one. Over all \NManual{} buildings, the median error was \ManMedape\%; the mean was \ManMape\% because of the market.
+
+\emph{Second reference.} We also compared the hand traces with building outlines that Microsoft extracted from satellite images by machine learning \cite{msfootprints}. For the \MsmanN{} buildings with a clear match, their median error was \MsmanMedape\%, worse than OSM. Like our traces, they were often a few meters away from the OSM outline (Fig.~\ref{fig:hero}a), which changes the area little.
+
+The answer to Q1 is therefore: when the outline is right, the OSM area is within a few percent, but some outlines are wrong. A user should look at the outline before trusting the result.
+
+\subsection{Q2: What Does a Report Look Like?}
+\label{sec:q2}
+
+Fig.~\ref{fig:hero} shows the result for Building W5 at the University of Sharjah. Its OSM outline has \CaseVertices{} corners and an area of \CaseArea~m$^2$, \CaseManErr\% from the hand trace. After the \CfgSetback~m edge strip, \CaseUsable~m$^2$ (\CaseUsablePct\%) is usable. \CaseModules{} modules fit in south-facing rows, which gives \CasePdc~kWp. With \CaseSy~kWh/kWp from PVGIS, the system produces \CaseEnergy~MWh per year. At \CfgCost~AED/kWp and \CfgTariff~AED/kWh, it costs \CaseCapex~AED, saves \CaseSavings~AED per year and pays back in \CasePayback{} years (\CaseDiscPayback{} years when discounted). Over \CfgLife{} years, the NPV is \CaseNpv~AED and the LCOE is \CaseLcoe~AED/kWh. The user runs the same steps in a desktop interface and gets a one-page report (Fig.~\ref{fig:tool}, shown for a warehouse in Dubai).
+
+\emph{Real layout against the simple rule.} The simple rule $k\,A_u$ would allow \CaseModulesRule{} modules on W5, \CaseRuleGap\% more than the layout. The rows run east to west, while the walls of W5 do not, so the triangles at the roof edges stay empty (Fig.~\ref{fig:hero}b). Over all \LcN{} buildings, the layout fits a median of \LcMedian\% of the modules given by the simple rule (range \LcMin--\LcMax\%). The lowest value belongs to the smallest roof. The simple rule therefore overestimates the system size by a few percent on large roofs and by much more on small ones. Such constant factors are common, but they ignore the shape of each roof and are hard to validate \cite{melius2013}.
+
+\subsection{Q3: Which Inputs Change the Answer?}
+
+\emph{Panel direction.} Fig.~\ref{fig:orientation} shows the PVGIS yield for all directions in Sharjah. At \CfgTilt$^\circ$ tilt, south gives \OrSouth\% of the best yield, east \OrEast\%, west \OrWest\% and north \OrNorth\%. Flat panels give \OrFlat\% in every direction. The sun is high in the UAE, so at low tilt the direction matters little. For W5, rows that follow the walls instead of facing south lose only \CaseAlLoss\% of the energy. Across the five emirates, the yield at 15$^\circ$ south ranges from \OrSiteMin{} to \OrSiteMax~kWh/kWp.
+
+\emph{Edge strip.} The usable share of the roof falls with the ratio $P/A$, as \eqref{eq:pa} predicts. It ranges from \SbMin\% for the smallest building to \SbMax\% for the largest. The simple formula \eqref{eq:pa} differs from the exact result by a median of \SbLinMed{} percentage points.
+
+\emph{All inputs.} Fig.~\ref{fig:tornado} changes one input at a time for W5. The energy depends most on the share of roof covered by modules (the row spacing) and the module efficiency. These are design choices, not errors in the data. The payback depends only on cost, price and yield \eqref{eq:payback}, and ranges from \PayMin{} to \PayMax{} years. A 5\% error in roof area changes the energy by about 5\% and does not change the payback.
+
+% ======================================================================
+\section{Discussion}
+
+\emph{Use.} SolarScan suits a first screen of many flat roofs, such as a campus, a group of warehouses or a city's public buildings. It is not a design tool. It estimates the technical potential; what is actually built also depends on owners, rules and the grid \cite{shi2026}. Because the payback does not depend on roof size, an area error changes the size of the opportunity, but rarely the decision to look closer.
+
+\emph{Limitations.} First, OSM gives the outline of the building, not the roof. The satellite image of W5 shows a dome and air-conditioning units on the roof (Fig.~\ref{fig:hero}a). The layout ignores them, as well as skylights, shade from tall neighbors and roof strength, so the real system will be smaller. Second, one person made all traces and labels, after seeing the OSM areas for some buildings. A second, independent tracer would make it stronger. Third, the tool cannot yet detect a wrong outline by itself. Fourth, cost and electricity prices differ between emirates and customers, so users should enter their own values. The default price leaves out the fuel surcharge and value-added tax, so the savings are on the low side. Fifth, PVGIS uses a fixed 14\% loss, and dust in the Gulf can cause larger losses when panels are not cleaned \cite{alali2013}.
+
+% ======================================================================
 \section{Conclusion}
 
-This paper has presented an open-source, reproducible Python framework for automated rooftop solar photovoltaic pre-feasibility screening using OpenStreetMap building footprints. By coupling Overpass vector retrieval, local metric projection, shoelace area computation, perimeter setback buffering, and empirical irradiance modeling, the framework eliminates reliance on costly proprietary APIs, airborne LiDAR point clouds, and commercial GIS desktop suites. 
+SolarScan gives a free and repeatable first answer to the rooftop solar question for any building in OpenStreetMap. On \NManual{} UAE buildings with hand traces, when the OSM outline was correct (\NOsmOk{} buildings), its area was within \OkMape\% of the trace on average. The other \NOsmBad{} outlines were wrong in different ways. For a typical university building, the tool estimates a \CasePdc~kWp system with a payback of \PayMin{} to \PayMax{} years. Cost and electricity price drive this result, not roof shape or panel direction. Next, we will detect wrong outlines automatically, find roof equipment in open images and test the tool in other Gulf cities.
 
-Evaluated against an empirical ground-truth benchmark of 24 buildings across five UAE Emirates, the automated framework achieved a Mean Absolute Percentage Error of 4.54\%, a Mean Bias Error of -4.54\%, and a correlation coefficient of $R^2 = 1.000$ compared to independent high-resolution satellite measurements. A detailed case study of the Computer Science Department Building W5 at the University of Sharjah demonstrated a 272.38~kW DC array capacity, 260.33~MWh annual generation, and a 2.75-year simple payback period. Sensitivity analyses confirmed that perimeter setback impact is governed by the building's perimeter-to-area ratio, demonstrating high robustness for commercial and institutional rooftops.
-
-
-Future work will explore automated rooftop obstruction segmentation using open Sentinel-2 multispectral imagery and integration of hourly meteorological APIs for dynamic temperature-derated yield modeling. All source code, validation fixtures, and figure generation scripts are made publicly available to support reproducible solar adoption across underserved regions.
+\section*{Data Availability}
+The code, building outlines, hand traces, PVGIS tables and the scripts that rebuild every number, table and figure in this paper are available at \url{https://github.com/IamOumarIbrahim/rooftop-scanning}. The satellite images in Figs.~\ref{fig:hero} and~\ref{fig:failures} are \copyright{} Google and its imagery providers. They are not redistributed, but the script that fetches them is included.
 
 \section*{Acknowledgment}
-The authors acknowledge the OpenStreetMap contributors for volunteering global building footprint data, and the facilities administration at the University of Sharjah for supporting campus energy benchmarking.
+We thank the OpenStreetMap contributors, Microsoft for its building outlines, and the European Commission Joint Research Centre for PVGIS.
 
+\balance
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 

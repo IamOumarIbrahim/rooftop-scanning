@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use SolarScan or its benchmark data, please cite the paper below."
+title: "SolarScan: rooftop solar screening from OpenStreetMap building footprints"
+version: 1.0.0
+license: MIT
+repository-code: "https://github.com/IamOumarIbrahim/rooftop-scanning"
+authors:
+  - family-names: Ibrahim
+    given-names: Oumar Mamoun
+    affiliation: University of Sharjah
+  - family-names: bin Ishak
+    given-names: Mohamad Khairi
+    affiliation: University of Sharjah
+  - family-names: Jarwar
+    given-names: Mir Umer
+    affiliation: University of Sharjah
+preferred-citation:
+  type: conference-paper
+  title: "Rooftop Solar Screening from OpenStreetMap Building Footprints"
+  authors:
+    - family-names: Ibrahim
+      given-names: Oumar Mamoun
+    - family-names: bin Ishak
+      given-names: Mohamad Khairi
+    - family-names: Jarwar
+      given-names: Mir Umer
+  conference:
+    name: "SEPS 2026"
+    location: "University of Sharjah, United Arab Emirates"
+  year: 2026

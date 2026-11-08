@@ -1,0 +1,38 @@
+\begin{table*}[t]
+\centering
+\caption{Benchmark Buildings: OSM Footprint Area Against the Manual Roof Trace}
+\label{tab:buildings}
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{llllrrrl}
+\toprule
+ID & Building & Emirate & Type & OSM area (m$^2$) & Traced area (m$^2$) & Error (\%) & OSM outline \\
+\midrule
+B01 & University Building W5 (Computer Science) & Sharjah & Academic & 1,607 & 1,591 & $+$1.0 & correct \\
+B02 & University Building M4 & Sharjah & Academic & 1,608 & 1,550 & $+$3.8 & correct \\
+B03 & University Building M11 & Sharjah & Academic & 3,595 & 3,848 & $-$6.6 & correct \\
+\rowcolor{black!8}B04 & University annex building & Sharjah & Academic & 124 & 103 & $+$20.4 & several levels \\
+B05 & Unnamed building at Mall of the Emirates site & Dubai & Commercial & 201,710 & 209,955 & $-$3.9 & correct \\
+B06 & Abu Dhabi Mall & Abu Dhabi & Commercial & 36,077 & 34,336 & $+$5.1 & correct \\
+B07 & City Centre Ajman & Ajman & Commercial & 65,533 & 68,417 & $-$4.2 & correct \\
+B08 & Unnamed building, Khuzam & Ras Al Khaimah & Commercial & 934 & 992 & $-$5.9 & correct \\
+\rowcolor{black!8}B09 & ACE Hardware Al Quoz & Dubai & Commercial & 1,950 & 2,448 & $-$20.3 & part missing \\
+B10 & Emirates NBD branch building & Dubai & Commercial & 3,261 & 3,313 & $-$1.6 & correct \\
+B11 & AlSafeer Mall Mussafah & Abu Dhabi & Commercial & 2,834 & 2,661 & $+$6.5 & correct \\
+B12 & Salem Shopping Center & Ajman & Commercial & 3,583 & 3,907 & $-$8.3 & correct \\
+\rowcolor{black!8}B13 & Ajman Public Market & Ajman & Commercial & 5,300 & 436 & $+$1115.9 & ground as roof \\
+B14 & Warehouse, Jebel Ali (Inchcape Shipping) & Dubai & Industrial & 3,935 & 4,095 & $-$3.9 & correct \\
+B15 & Alserkal Avenue warehouse & Dubai & Industrial & 3,526 & 3,717 & $-$5.1 & correct \\
+\rowcolor{black!8}B16 & On Demand Auto Repairs workshop & Dubai & Industrial & 1,701 & 4,838 & $-$64.8 & part missing \\
+B17 & TCTI warehouse & Dubai & Industrial & 4,641 & 4,766 & $-$2.6 & correct \\
+\rowcolor{black!8}B18 & Sku Line workshop, Mussafah & Abu Dhabi & Industrial & 1,716 & 2,513 & $-$31.7 & part missing \\
+B19 & Unnamed warehouse, Mussafah M-15 (1) & Abu Dhabi & Industrial & 1,904 & 1,895 & $+$0.5 & correct \\
+B20 & Unnamed warehouse, Mussafah M-15 (2) & Abu Dhabi & Industrial & 1,822 & 1,877 & $-$3.0 & correct \\
+\rowcolor{black!8}B21 & Emirates Post office, Al Jerf & Ajman & Industrial & 1,219 & 1,000 & $+$21.9 & courtyard as roof \\
+B22 & Unnamed industrial building, Ind. Area 13 & Sharjah & Industrial & 2,500 & 2,618 & $-$4.5 & correct \\
+B23 & Unnamed industrial building, Ind. Area 11 & Sharjah & Industrial & 1,823 & 1,678 & $+$8.6 & correct \\
+\rowcolor{black!8}B24 & Unnamed industrial building, Ind. Area 10 & Sharjah & Industrial & 1,514 & 9,385 & $-$83.9 & part missing \\
+\bottomrule
+\multicolumn{8}{l}{Error $=(A_{\mathrm{OSM}}-A_{\mathrm{trace}})/A_{\mathrm{trace}}$. Grey rows: the OSM outline does not match the building (Table~\ref{tab:failures}).}\\
+\end{tabular}
+\end{table*}

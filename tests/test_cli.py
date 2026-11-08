@@ -70,3 +70,65 @@ def test_cli_main_demo(monkeypatch, tmp_path):
     monkeypatch.setattr("solarscan.cli.run_scan", lambda *args, **kwargs: "mock_demo_report.html")
     main()
 
+
+def test_cli_main_scan_with_emirate_tariff(monkeypatch, tmp_path):
+    """Verifies that CLI main with --emirate uses regional tariff rather than being overridden."""
+    import sys
+    from solarscan.cli import main
+    out_dir = str(tmp_path / "reports_cli_ad")
+    captured_args = {}
+    def mock_run_scan(*args, **kwargs):
+        captured_args.update(kwargs)
+        return "mock_report.pdf"
+    
+    monkeypatch.setattr("solarscan.cli.run_scan", mock_run_scan)
+    monkeypatch.setattr(sys, "argv", [
+        "solarscan", "scan", "AD Terminal",
+        "--fixture", W5_FIXTURE,
+        "--emirate", "abu_dhabi",
+        "--out", out_dir
+    ])
+    main()
+    assert captured_args["emirate"] == "abu_dhabi"
+    assert captured_args["rate_aed"] is None  # Defaults to None so emirate profile is respected
+
+
+def test_cli_batch_scan(tmp_path):
+    from solarscan.cli import run_batch_scan
+    csv_file = tmp_path / "batch.csv"
+    csv_file.write_text(
+        "address,lat,lon,emirate,fixture\n"
+        f"Facility A,25.2893,55.4783,sharjah,{W5_FIXTURE}\n"
+        f"Facility B,24.4539,54.3773,abu_dhabi,{W5_FIXTURE}\n",
+        encoding="utf-8"
+    )
+    out_dir = str(tmp_path / "batch_reports")
+    reports = run_batch_scan(str(csv_file), out_dir=out_dir, fmt="html")
+    assert len(reports) == 2
+    for r in reports:
+        assert os.path.exists(r)
+
+
+def test_cli_batch_scan_malformed_rows(tmp_path):
+    from solarscan.cli import run_batch_scan
+    csv_file = tmp_path / "bad_batch.csv"
+    csv_file.write_text(
+        "address,lat,lon,emirate,fixture\n"
+        f"Valid Facility,25.2893,55.4783,sharjah,{W5_FIXTURE}\n"
+        "Malformed Facility,invalid_lat,invalid_lon,sharjah,\n"
+        "   ,25.0,55.0,sharjah,\n",
+        encoding="utf-8"
+    )
+    out_dir = str(tmp_path / "bad_batch_reports")
+    reports = run_batch_scan(str(csv_file), out_dir=out_dir, fmt="pdf")
+    # Should successfully process the valid row and not crash on malformed rows
+    assert len(reports) >= 1
+    assert os.path.exists(reports[0])
+
+
+def test_cli_batch_missing_file():
+    from solarscan.cli import run_batch_scan
+    with pytest.raises(FileNotFoundError, match="Batch CSV '.*' not found"):
+        run_batch_scan("non_existent_batch.csv")
+
+

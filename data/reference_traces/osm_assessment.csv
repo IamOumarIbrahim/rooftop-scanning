@@ -1,0 +1,25 @@
+id,osm_status,note
+uos_m13,multi_level,Roof has several levels; one footprint cannot describe the usable roof
+moe_dubai,correct,
+ad_mall,correct,
+ajman_city_center,correct,
+rak_mall,correct,
+dubai_ace_hardware,partial,OSM outline misses part of the building; containers next to it look like roof on the image
+dubai_enbd_center,correct,
+ad_alsafeer_mall,correct,
+ajman_salem_center,correct,
+ajman_public_market,ground_as_roof,OSM outline covers the whole market floor; only a small part is roof
+jebel_ali_wh,correct,
+al_serkal,correct,
+dubai_ondemand_auto,partial,OSM outline covers only part of the building
+dubai_tcti_warehouse,correct,
+ad_skuline_logistics,partial,OSM outline covers only part of the building
+ad_mussafah_wh1,correct,
+ad_mussafah_wh2,correct,
+ajman_empost_hub,courtyard_as_roof,OSM outline counts the open inner courtyard as roof
+shj_ind_logistics13,correct,
+shj_ind_wh11,correct,
+shj_ind_fab10,partial,OSM outline covers only part of the building
+uos_w5,correct,
+uos_m4,correct,
+uos_m11,correct,

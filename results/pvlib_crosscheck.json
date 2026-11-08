@@ -1,0 +1,60 @@
+{
+ "site": "sharjah",
+ "lat": 25.2893,
+ "lon": 55.4783,
+ "cases": [
+  {
+   "tilt": 0,
+   "azimuth": 180,
+   "pvgis": 1599.1,
+   "pvlib": 1600.0,
+   "diff_pct": 0.06
+  },
+  {
+   "tilt": 15,
+   "azimuth": 180,
+   "pvgis": 1705.0,
+   "pvlib": 1718.5,
+   "diff_pct": 0.79
+  },
+  {
+   "tilt": 25,
+   "azimuth": 180,
+   "pvgis": 1728.3,
+   "pvlib": 1745.2,
+   "diff_pct": 0.98
+  },
+  {
+   "tilt": 15,
+   "azimuth": 90,
+   "pvgis": 1528.4,
+   "pvlib": 1556.4,
+   "diff_pct": 1.83
+  },
+  {
+   "tilt": 15,
+   "azimuth": 270,
+   "pvgis": 1595.1,
+   "pvlib": 1588.4,
+   "diff_pct": -0.42
+  },
+  {
+   "tilt": 15,
+   "azimuth": 0,
+   "pvgis": 1406.6,
+   "pvlib": 1418.5,
+   "diff_pct": 0.85
+  },
+  {
+   "tilt": 30,
+   "azimuth": 0,
+   "pvgis": 1141.5,
+   "pvlib": 1159.6,
+   "diff_pct": 1.58
+  }
+ ],
+ "ghi_kwh_m2": 2191,
+ "dni_kwh_m2": 2087,
+ "t_air_max_c": 46.3,
+ "max_abs_diff_pct": 1.83
+}
