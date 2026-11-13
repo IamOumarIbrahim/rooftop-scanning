@@ -78,32 +78,33 @@ class App:
         side.pack(side="left", fill="y", padx=(0, 16))
         side.pack_propagate(False)
 
-        b = self._card(side, "1  Building")
+        self.building_card = self._card(side, "1  Building")
         self.addr = tk.StringVar()
-        e = tk.Entry(b, textvariable=self.addr, font=_font(11), relief="solid", bd=1, highlightthickness=0)
-        e.pack(fill="x", padx=14, ipady=5)
-        e.bind("<Return>", lambda _: self.scan())
-        tk.Label(b, text="Address, place name, or  lat, lon", bg=CARD, fg=INK2, font=_font(8)).pack(anchor="w", padx=14)
-        row = tk.Frame(b, bg=CARD)
+        self.entry = tk.Entry(self.building_card, textvariable=self.addr, font=_font(11), relief="solid", bd=1, highlightthickness=0)
+        self.entry.pack(fill="x", padx=14, ipady=5)
+        self.entry.bind("<Return>", lambda _: self.scan())
+        tk.Label(self.building_card, text="Address, place name, or  lat, lon", bg=CARD, fg=INK2, font=_font(8)).pack(anchor="w", padx=14)
+        row = tk.Frame(self.building_card, bg=CARD)
         row.pack(fill="x", padx=14, pady=(8, 12))
         tk.Label(row, text="Emirate", bg=CARD, fg=INK2, font=_font(9)).pack(side="left")
         self.emirate = ttk.Combobox(row, values=EMIRATES, state="readonly", width=17)
         self.emirate.current(0)
         self.emirate.pack(side="right")
 
-        a = self._card(side, "2  Assumptions")
-        self.cost = self._slider(a, "Installed cost", 2000, 5000, 3000, 100, "{:,.0f} AED/kWp", live=True)
-        self.price = self._slider(a, "Electricity price", 0.20, 0.60, 0.38, 0.01, "{:.2f} AED/kWh", live=True)
-        self.tilt = self._slider(a, "Module tilt", 5, 30, 15, 1, "{:.0f}°")
-        self.edge = self._slider(a, "Edge strip", 0.5, 3.0, 1.5, 0.5, "{:.1f} m")
-        tk.Frame(a, bg=CARD, height=6).pack()
+        self.assumptions_card = self._card(side, "2  Assumptions")
+        self.cost = self._slider(self.assumptions_card, "Installed cost", 2000, 5000, 3000, 100, "{:,.0f} AED/kWp", live=True)
+        self.price = self._slider(self.assumptions_card, "Electricity price", 0.20, 0.60, 0.38, 0.01, "{:.2f} AED/kWh", live=True)
+        self.tilt = self._slider(self.assumptions_card, "Module tilt", 5, 30, 15, 1, "{:.0f}°")
+        self.edge = self._slider(self.assumptions_card, "Edge strip", 0.5, 3.0, 1.5, 0.5, "{:.1f} m")
+        tk.Frame(self.assumptions_card, bg=CARD, height=6).pack()
 
         self.go = tk.Button(side, text="Scan roof", command=self.scan, bg=ACCENT, fg="white", activebackground=NAVY,
                             activeforeground="white", relief="flat", font=_font(12, True), cursor="hand2")
         self.go.pack(fill="x", ipady=8)
-        tk.Button(side, text="Try the demo building", command=self.demo, bg=CARD, fg=ACCENT, relief="flat",
-                  font=_font(10), cursor="hand2", highlightthickness=1, highlightbackground=LINE
-                  ).pack(fill="x", pady=(8, 0), ipady=5)
+        self.demo_btn = tk.Button(side, text="Try the demo building", command=self.demo, bg=CARD, fg=ACCENT, relief="flat",
+                                  font=_font(10), cursor="hand2", highlightthickness=1, highlightbackground=LINE
+                                  )
+        self.demo_btn.pack(fill="x", pady=(8, 0), ipady=5)
 
     def _slider(self, parent, label, lo, hi, val, step, fmt, live=False):
         var = tk.DoubleVar(value=val)
@@ -119,20 +120,22 @@ class App:
             out.config(text=fmt.format(v))
             if live:
                 self._refresh_money()
-        ttk.Scale(parent, from_=lo, to=hi, variable=var, command=moved).pack(fill="x", padx=14)
+        sc = ttk.Scale(parent, from_=lo, to=hi, variable=var, command=moved)
+        sc.pack(fill="x", padx=14)
+        var.scale = sc
         return var
 
     # ------------------------------------------------------------ results
     def _main(self, body):
         main = tk.Frame(body, bg=BG)
         main.pack(side="left", fill="both", expand=True)
-        tiles = tk.Frame(main, bg=BG)
-        tiles.pack(fill="x")
+        self.tiles_frame = tk.Frame(main, bg=BG)
+        self.tiles_frame.pack(fill="x")
         self.tiles = []
         for i, name in enumerate(["System size", "Energy per year", "Investment", "Payback"]):
-            t = tk.Frame(tiles, bg=CARD, highlightthickness=1, highlightbackground=LINE)
+            t = tk.Frame(self.tiles_frame, bg=CARD, highlightthickness=1, highlightbackground=LINE)
             t.grid(row=0, column=i, sticky="nsew", padx=(0 if i == 0 else 10, 0))
-            tiles.columnconfigure(i, weight=1)
+            self.tiles_frame.columnconfigure(i, weight=1)
             tk.Label(t, text=name, bg=CARD, fg=INK2, font=_font(9)).pack(anchor="w", padx=12, pady=(8, 0))
             v = tk.Label(t, text="–", bg=CARD, fg=ACCENT, font=_font(20, True))
             v.pack(anchor="w", padx=12)
@@ -142,28 +145,28 @@ class App:
 
         lower = tk.Frame(main, bg=BG)
         lower.pack(fill="both", expand=True, pady=(12, 0))
-        plan = tk.Frame(lower, bg=CARD, highlightthickness=1, highlightbackground=LINE)
-        plan.pack(side="left", fill="both", expand=True)
-        tk.Label(plan, text="Roof plan", bg=CARD, fg=INK, font=_font(11, True)).pack(anchor="w", padx=14, pady=(10, 0))
-        self.plan = tk.Label(plan, bg=CARD, text="The roof and the modules that fit\nwill appear here.",
+        self.plan_frame = tk.Frame(lower, bg=CARD, highlightthickness=1, highlightbackground=LINE)
+        self.plan_frame.pack(side="left", fill="both", expand=True)
+        tk.Label(self.plan_frame, text="Roof plan", bg=CARD, fg=INK, font=_font(11, True)).pack(anchor="w", padx=14, pady=(10, 0))
+        self.plan = tk.Label(self.plan_frame, bg=CARD, text="The roof and the modules that fit\nwill appear here.",
                              fg=INK2, font=_font(10))
         self.plan.pack(fill="both", expand=True, padx=8, pady=8)
 
         right = tk.Frame(lower, bg=BG, width=380)
         right.pack(side="left", fill="y", padx=(12, 0))
         right.pack_propagate(False)
-        sysc = tk.Frame(right, bg=CARD, highlightthickness=1, highlightbackground=LINE)
-        sysc.pack(fill="x")
-        tk.Label(sysc, text="System assumed", bg=CARD, fg=INK, font=_font(11, True)).pack(anchor="w", padx=14, pady=(10, 4))
-        self.sys_rows = tk.Frame(sysc, bg=CARD)
+        self.sys_frame = tk.Frame(right, bg=CARD, highlightthickness=1, highlightbackground=LINE)
+        self.sys_frame.pack(fill="x")
+        tk.Label(self.sys_frame, text="System assumed", bg=CARD, fg=INK, font=_font(11, True)).pack(anchor="w", padx=14, pady=(10, 4))
+        self.sys_rows = tk.Frame(self.sys_frame, bg=CARD)
         self.sys_rows.pack(fill="x", padx=14, pady=(0, 10))
 
-        heat = tk.Frame(right, bg=CARD, highlightthickness=1, highlightbackground=LINE)
-        heat.pack(fill="both", expand=True, pady=(12, 0))
-        tk.Label(heat, text="Payback (years)", bg=CARD, fg=INK, font=_font(11, True)).pack(anchor="w", padx=14, pady=(10, 0))
-        tk.Label(heat, text="rows: cost, AED/kWp | columns: price, AED/kWh", bg=CARD, fg=INK2,
+        self.heat_frame = tk.Frame(right, bg=CARD, highlightthickness=1, highlightbackground=LINE)
+        self.heat_frame.pack(fill="both", expand=True, pady=(12, 0))
+        tk.Label(self.heat_frame, text="Payback (years)", bg=CARD, fg=INK, font=_font(11, True)).pack(anchor="w", padx=14, pady=(10, 0))
+        tk.Label(self.heat_frame, text="rows: cost, AED/kWp | columns: price, AED/kWh", bg=CARD, fg=INK2,
                  font=_font(8)).pack(anchor="w", padx=14)
-        self.heat = tk.Canvas(heat, bg=CARD, highlightthickness=0, height=170)
+        self.heat = tk.Canvas(self.heat_frame, bg=CARD, highlightthickness=0, height=170)
         self.heat.pack(fill="x", padx=14, pady=6)
 
         btns = tk.Frame(right, bg=BG)
